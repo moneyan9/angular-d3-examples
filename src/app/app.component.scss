@@ -1,4 +1,4 @@
-* {
+HTML CSS JSResult * {
   margin: 0;
   padding: 0;
 }
@@ -15,7 +15,6 @@ body {
   width: 800px;
   overflow: visible;
 }
-
 
 .svg {
   width: 800px;
@@ -34,7 +33,6 @@ body {
   stroke-width: 0;
 }
 
-
 #tag {
   color: white;
   background: #FA283D;
@@ -45,8 +43,6 @@ body {
   margin-left: -80px;
   font-size: 11px;
 }
-
-
 
 #tag:before {
   border: solid transparent;
