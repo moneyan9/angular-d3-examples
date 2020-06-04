@@ -96,13 +96,22 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .attr('width', svgWidth)
       .attr('height', svgHeight);
 
+    svg.append('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', 800)
+      .attr('height', 400)
+      .attr('stroke-width', 1)
+      .attr('stroke', '#D3D3D3')
+      .attr('fill', 'none')
+
     const dateFormat = d3.timeParse('%Y-%m-%d');
     const minDate = d3.min(this.tasks, d => dateFormat(d.startTime));
     const maxDate = d3.max(this.tasks, d => dateFormat(d.endTime));
     const scaleTime = d3.scaleTime()
       .domain([minDate, maxDate.setDate(maxDate.getDate())])
       .range([0, svgWidth - 150]);
-    const scaleColor = d3.scaleOrdinal(d3.schemePastel1);
+    const scaleColor = d3.scaleOrdinal(d3.schemeCategory10);
 
     const titleHeight = 75;
     const sidePadding = 75;
@@ -110,7 +119,11 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
     const barGap = barHeight + 4;
 
     this.drawHeader(svg, svgWidth);
-    this.drawGrid(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
+    this.drawGanttUpperLine(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
+    this.drawDayLines(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
+    this.drawGanttBottomLine(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
+    this.drawTodayLine(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
+    // this.drawGrid(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
     this.drawRects(svg, svgWidth, svgHeight, sidePadding, titleHeight, barHeight, barGap, this.tasks, dateFormat, scaleTime, scaleColor);
     this.drawVertLabels(svg, sidePadding, titleHeight, barHeight, barGap, this.tasks, scaleColor);
   }
@@ -129,68 +142,160 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   private drawGrid(
-    svg: any,
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
     svgWidth: number,
     svgHeight: number,
     sidePadding: number,
     titleHeight: number,
     scaleTime: d3.ScaleTime<number, number>) {
 
-    const adjustTextLabels = selection => {
-      selection.selectAll('text')
-        .attr('transform', 'translate(' + daysToPixels(1, scaleTime) / 2 + ',0)');
+    // const adjustTextLabels = selection => {
+    //   selection.selectAll('text')
+    //     .attr('transform', 'translate(' + daysToPixels(1, scaleTime) / 2 + ',0)');
+    // }
+
+    // // calculate the width of the days in the timeScale
+    // const daysToPixels = (days, timeScale) => {
+    //   const d1 = new Date();
+    //   return timeScale(d3.timeDay.offset(d1, days)) - timeScale(d1);
+    // }
+
+    // // 年月目盛り
+    // const xAxis1 = d3.axisTop(scaleTime)
+    //   .ticks(d3.timeDay, 1)
+    //   .tickSizeInner(0)
+    //   .tickSizeOuter(0)
+    //   .tickPadding(20)
+    //   .tickFormat((d: Date) => {
+    //     if (d.getDate() === 1) {
+    //       return d3.timeFormat('%Y/%m')(d).toString();
+    //     }
+    //     return null;
+    //   });
+
+    // // 年月目盛り反映
+    // const grid1 = svg.append('g')
+    //   .attr('transform', 'translate(' + sidePadding + ', ' + titleHeight + ')')
+    //   .call(xAxis1);
+
+    // // 目盛り横線削除
+    // grid1.select('.domain').remove();
+
+    // // 日目盛り
+    // const xAxis2 = d3.axisTop(scaleTime)
+    //   .ticks(d3.timeDay, 1)
+    //   .tickSize(-svgHeight + titleHeight + 20)
+    //   .tickFormat(d3.timeFormat('%d'))
+
+    // // 反映
+    // const grid2 = svg.append('g')
+    //   .attr('class', 'grid')
+    //   .attr('transform', 'translate(' + sidePadding + ', ' + titleHeight + ')')
+    //   .call(xAxis2)
+    //   .call(adjustTextLabels);
+
+    // // 目盛り・目盛り線の色の変更
+    // grid2.selectAll('.domain').style('color', '#D3D3D3')
+    // grid2.selectAll('line').style('color', '#D3D3D3')
+    // grid2.selectAll('text').remove();
+    // .style('color', 'black')
+    // .style('padding-left', '30')
+  }
+
+  private drawDayLines(
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
+    svgWidth: number,
+    svgHeight: number,
+    sidePadding: number,
+    titleHeight: number,
+    scaleTime: d3.ScaleTime<number, number>
+  ) {
+
+    const [startDay, endDay] = scaleTime.domain();
+    const rangeDays: Date[] = [];
+    while (startDay <= endDay) {
+      rangeDays.push(new Date(startDay));
+      startDay.setDate(startDay.getDate() + 1);
     }
 
-    // calculate the width of the days in the timeScale
-    const daysToPixels = (days, timeScale) => {
-      const d1 = new Date();
-      return timeScale(d3.timeDay.offset(d1, days)) - timeScale(d1);
-    }
+    svg.append('g')
+      .selectAll('line')
+      .data(rangeDays)
+      .enter()
+      .append('line')
+      .attr('x1', (d) => scaleTime(d) + sidePadding)
+      .attr('x2', (d) => scaleTime(d) + sidePadding)
+      .attr('y1', titleHeight)
+      .attr('y2', 300)
+      .attr('stroke-width', 1)
+      .attr('stroke', '#D3D3D3');
+  }
 
-    // 年月目盛り
-    const xAxis1 = d3.axisTop(scaleTime)
-      .ticks(d3.timeDay, 1)
-      .tickSizeInner(0)
-      .tickSizeOuter(0)
-      .tickPadding(20)
-      .tickFormat((d: Date) => {
-        if (d.getDate() === 1) {
-          return d3.timeFormat('%Y/%m')(d).toString();
-        }
-        return null;
-      });
+  private drawTodayLine(
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
+    svgWidth: number,
+    svgHeight: number,
+    sidePadding: number,
+    titleHeight: number,
+    scaleTime: d3.ScaleTime<number, number>
+  ) {
 
-    // 年月目盛り反映
-    const grid1 = svg.append('g')
-      .attr('transform', 'translate(' + sidePadding + ', ' + titleHeight + ')')
-      .call(xAxis1);
+    const toDay = new Date('2013-2-2');
+    const nextDay = new Date(toDay).setDate(toDay.getDate() + 1);
 
-    // 目盛り横線削除
-    grid1.select('.domain').remove();
+    svg.append('g')
+      .selectAll('line')
+      .data([toDay])
+      .enter()
+      .append('line')
+      .attr('x1', (d) => (scaleTime(nextDay) + scaleTime(d) + sidePadding * 2) / 2)
+      .attr('x2', (d) => (scaleTime(nextDay) + scaleTime(d) + sidePadding * 2) / 2)
+      .attr('y1', titleHeight)
+      .attr('y2', 300)
+      .attr('stroke-width', 1)
+      .attr('stroke', '#EF410B');
+  }
 
-    // 日目盛り
-    const xAxis2 = d3.axisTop(scaleTime)
-      .ticks(d3.timeDay, 1)
-      .tickSize(-svgHeight + titleHeight + 20)
-      .tickFormat(d3.timeFormat('%d'))
+  private drawGanttUpperLine(
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
+    svgWidth: number,
+    svgHeight: number,
+    sidePadding: number,
+    titleHeight: number,
+    scaleTime: d3.ScaleTime<number, number>
+  ) {
+    const [startDay, endDay] = scaleTime.domain();
 
-    // 反映
-    const grid2 = svg.append('g')
-      .attr('class', 'grid')
-      .attr('transform', 'translate(' + sidePadding + ', ' + titleHeight + ')')
-      .call(xAxis2)
-      .call(adjustTextLabels);
+    svg.append('line')
+      .attr('x1', scaleTime(startDay))
+      .attr('x2', scaleTime(endDay) + sidePadding)
+      .attr('y1', titleHeight)
+      .attr('y2', titleHeight)
+      .attr('stroke-width', 1)
+      .attr('stroke', '#D3D3D3');
+  }
 
-    // 目盛り・目盛り線の色の変更
-    grid2.selectAll('.domain').style('color', '#D3D3D3')
-    grid2.selectAll('line').style('color', '#D3D3D3')
-    grid2.selectAll('text')
-      .style('color', 'black')
-      .style('padding-left', '30')
+  private drawGanttBottomLine(
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
+    svgWidth: number,
+    svgHeight: number,
+    sidePadding: number,
+    titleHeight: number,
+    scaleTime: d3.ScaleTime<number, number>
+  ) {
+    const [startDay, endDay] = scaleTime.domain();
+
+    svg.append('line')
+      .attr('x1', scaleTime(startDay))
+      .attr('x2', scaleTime(endDay) + sidePadding)
+      .attr('y1', 300)
+      .attr('y2', 300)
+      .attr('stroke-width', 1)
+      .attr('stroke', '#D3D3D3');
   }
 
   private drawRects(
-    svg:  d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
     svgWidth: number,
     svgHeight: number,
     sidePadding: number,
@@ -312,7 +417,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   private drawVertLabels(
-    svg:  d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
     sidePadding: number,
     titleHeight: number,
     barHeight: number,
@@ -347,7 +452,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .attr('text-height', 14)
       .attr('fill', d => {
         const index = categories.findIndex(c => c === d.type);
-        if (index) {
+        if (index !== -1) {
           return d3.rgb(scaleColor(index.toString())).darker().toString();
         }
       });
