@@ -102,17 +102,17 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
     const scaleTime = d3.scaleTime()
       .domain([minDate, maxDate.setDate(maxDate.getDate())])
       .range([0, svgWidth - 150]);
-    const scaleColor = d3.scaleOrdinal(d3.schemeCategory10);
+    const scaleColor = d3.scaleOrdinal(d3.schemePastel1);
 
+    const titleHeight = 75;
+    const sidePadding = 75;
     const barHeight = 20;
     const barGap = barHeight + 4;
-    const topPadding = 75;
-    const sidePadding = 75;
 
     this.drawHeader(svg, svgWidth);
-    this.drawGrid(svg, svgWidth, svgHeight, sidePadding, topPadding, scaleTime);
-    this.drawRects(svg, svgWidth, svgHeight, sidePadding, topPadding, barHeight, barGap, this.tasks, dateFormat, scaleTime, scaleColor);
-    this.drawVertLabels(svg, sidePadding, topPadding, barHeight, barGap, this.tasks, scaleColor);
+    this.drawGrid(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
+    this.drawRects(svg, svgWidth, svgHeight, sidePadding, titleHeight, barHeight, barGap, this.tasks, dateFormat, scaleTime, scaleColor);
+    this.drawVertLabels(svg, sidePadding, titleHeight, barHeight, barGap, this.tasks, scaleColor);
   }
 
   private drawHeader(
@@ -133,7 +133,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
     svgWidth: number,
     svgHeight: number,
     sidePadding: number,
-    topPadding: number,
+    titleHeight: number,
     scaleTime: d3.ScaleTime<number, number>) {
 
     const adjustTextLabels = selection => {
@@ -162,7 +162,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
 
     // 年月目盛り反映
     const grid1 = svg.append('g')
-      .attr('transform', 'translate(' + sidePadding + ', ' + topPadding + ')')
+      .attr('transform', 'translate(' + sidePadding + ', ' + titleHeight + ')')
       .call(xAxis1);
 
     // 目盛り横線削除
@@ -171,13 +171,13 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
     // 日目盛り
     const xAxis2 = d3.axisTop(scaleTime)
       .ticks(d3.timeDay, 1)
-      .tickSize(-svgHeight + topPadding + 20)
+      .tickSize(-svgHeight + titleHeight + 20)
       .tickFormat(d3.timeFormat('%d'))
 
     // 反映
     const grid2 = svg.append('g')
       .attr('class', 'grid')
-      .attr('transform', 'translate(' + sidePadding + ', ' + topPadding + ')')
+      .attr('transform', 'translate(' + sidePadding + ', ' + titleHeight + ')')
       .call(xAxis2)
       .call(adjustTextLabels);
 
@@ -190,11 +190,11 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   private drawRects(
-    svg: any,
+    svg:  d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
     svgWidth: number,
     svgHeight: number,
     sidePadding: number,
-    topPadding: number,
+    titleHeight: number,
     barHeight: number,
     barGap: number,
     tasks: Task[],
@@ -211,7 +211,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .enter()
       .append('rect')
       .attr('x', 0)
-      .attr('y', (d, i) => i * barGap + topPadding - 2)
+      .attr('y', (d, i) => i * barGap + titleHeight - 2)
       .attr('width', d => svgWidth - sidePadding / 2)
       .attr('height', barGap)
       .attr('stroke', 'none')
@@ -234,7 +234,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .attr('rx', 3)
       .attr('ry', 3)
       .attr('x', d => scaleTime(dateFormat(d.startTime)) + sidePadding)
-      .attr('y', (d, i) => i * barGap + topPadding)
+      .attr('y', (d, i) => i * barGap + titleHeight)
       .attr('width', d => (scaleTime(dateFormat(d.endTime)) - scaleTime(dateFormat(d.startTime))))
       .attr('height', barHeight)
       .attr('stroke', 'none')
@@ -253,7 +253,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
           scaleTime(dateFormat(d.startTime)) +
           sidePadding
       })
-      .attr('y', (d, i) => i * barGap + 14 + topPadding)
+      .attr('y', (d, i) => i * barGap + 14 + titleHeight)
       .attr('font-size', 11)
       .attr('text-anchor', 'middle')
       .attr('text-height', barHeight)
@@ -312,9 +312,9 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   private drawVertLabels(
-    svg: any,
+    svg:  d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
     sidePadding: number,
-    topPadding: number,
+    titleHeight: number,
     barHeight: number,
     barGap: number,
     tasks: Task[],
@@ -337,9 +337,9 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .attr('y', (d, i) => {
         if (i > 0) {
           const prevGap = numOccurances.reduce((p, c, index) => index < i ? p += c.itemCount : p, 0);
-          return d.itemCount * barGap / 2 + prevGap * barGap + topPadding;
+          return d.itemCount * barGap / 2 + prevGap * barGap + titleHeight;
         } else {
-          return d.itemCount * barGap / 2 + topPadding;
+          return d.itemCount * barGap / 2 + titleHeight;
         }
       })
       .attr('font-size', 11)
@@ -348,7 +348,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .attr('fill', d => {
         const index = categories.findIndex(c => c === d.type);
         if (index) {
-          return d3.rgb(scaleColor(index.toString())).darker();
+          return d3.rgb(scaleColor(index.toString())).darker().toString();
         }
       });
   }
