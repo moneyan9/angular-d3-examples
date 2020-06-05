@@ -3,10 +3,24 @@ import * as d3 from 'd3';
 
 type Task = {
   task: string;
-  type: string;
+  group: string;
   startTime: string;
   endTime: string;
   details?: string;
+}
+
+type ganttSetting = {
+  svgWidth: number;
+  svgHeight: number;
+  titleHeight: number;
+  upperLineStrokeWidth: number;
+  itemNameWidth: number;
+  rightPadding: number;
+  leftPadding: number;
+  barHeight: number;
+  groupPaddingTop: number;
+  groupPaddingBottom: number;
+  taskGap: number;
 }
 
 @Component({
@@ -14,93 +28,120 @@ type Task = {
   templateUrl: './guntt-chart.component.html',
   styleUrls: ['./guntt-chart.component.scss']
 })
+
+/**
+ * ガントチャート
+ */
 export class GunttChartComponent implements OnInit, AfterViewInit {
 
-  private tasks = [
+  private tasks: Task[] = [
     {
       task: 'conceptualize',
-      type: 'development',
+      group: 'development',
       startTime: '2013-1-28',
       endTime: '2013-2-1',
       details: 'This actually did\'nt take any conceptualization'
     },
     {
       task: 'sketch',
-      type: 'development',
+      group: 'development',
       startTime: '2013-2-1',
       endTime: '2013-2-6',
       details: 'No sketching either, really'
     },
     {
       task: 'color profiles',
-      type: 'development',
+      group: 'development',
       startTime: '2013-2-6',
       endTime: '2013-2-9'
     },
     {
       task: 'HTML',
-      type: 'coding',
+      group: 'coding',
       startTime: '2013-2-2',
       endTime: '2013-2-6',
       details: 'all three lines of it'
     },
     {
       task: 'write the JS',
-      type: 'coding',
+      group: 'coding',
       startTime: '2013-2-6',
       endTime: '2013-2-9'
     },
     {
       task: 'advertise',
-      type: 'promotion',
+      group: 'promotion',
       startTime: '2013-2-9',
       endTime: '2013-2-12',
       details: 'This counts, right?'
     },
     {
       task: 'spam links',
-      type: 'promotion',
+      group: 'promotion',
       startTime: '2013-2-12',
       endTime: '2013-2-14'
     },
     {
       task: 'eat',
-      type: 'celebration',
+      group: 'celebration',
       startTime: '2013-2-8',
       endTime: '2013-2-13',
       details: 'All the things'
     },
     {
       task: 'crying',
-      type: 'celebration',
+      group: 'celebration',
       startTime: '2013-2-13',
       endTime: '2013-2-16'
     },
   ];
 
+  ganttSetting: ganttSetting = null;
+
   constructor() { }
 
+  /**
+   * 
+   */
   ngOnInit(): void {
   }
 
+  /**
+   * 
+   */
   ngAfterViewInit() {
     this.drawGanttChart();
   }
 
+  /**
+   * 
+   */
   private drawGanttChart() {
 
-    const svgWidth = 800;
-    const svgHeight = 400;
+    this.ganttSetting = {
+      svgWidth: 800,
+      svgHeight: 600,
+      titleHeight: 75,
+      upperLineStrokeWidth: 1,
+      itemNameWidth: 100,
+      rightPadding: 50,
+      leftPadding: 50,
+      barHeight: 24,
+      groupPaddingTop: 8,
+      groupPaddingBottom: 8,
+      taskGap: 4,
+    }
+
     const svg = d3.selectAll('.svg')
       .append('svg')
-      .attr('width', svgWidth)
-      .attr('height', svgHeight);
+      .attr('width', this.ganttSetting.svgWidth)
+      .attr('height', this.ganttSetting.svgHeight);
 
     svg.append('rect')
       .attr('x', 0)
       .attr('y', 0)
-      .attr('width', 800)
-      .attr('height', 400)
+      .attr('width', this.ganttSetting.svgWidth)
+      .attr('height', this.ganttSetting.svgHeight)
       .attr('stroke-width', 1)
       .attr('stroke', '#D3D3D3')
       .attr('fill', 'none')
@@ -110,104 +151,40 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
     const maxDate = d3.max(this.tasks, d => dateFormat(d.endTime));
     const scaleTime = d3.scaleTime()
       .domain([minDate, maxDate.setDate(maxDate.getDate())])
-      .range([0, svgWidth - 150]);
+      .range([this.ganttSetting.leftPadding + this.ganttSetting.itemNameWidth,
+      this.ganttSetting.svgWidth - this.ganttSetting.rightPadding]);
     const scaleColor = d3.scaleOrdinal(d3.schemeCategory10);
 
-    const titleHeight = 75;
-    const sidePadding = 75;
-    const barHeight = 20;
-    const barGap = barHeight + 4;
-
-    this.drawHeader(svg, svgWidth);
-    this.drawGanttUpperLine(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
-    this.drawDayLines(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
-    this.drawGanttBottomLine(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
-    this.drawTodayLine(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
-    // this.drawGrid(svg, svgWidth, svgHeight, sidePadding, titleHeight, scaleTime);
-    this.drawRects(svg, svgWidth, svgHeight, sidePadding, titleHeight, barHeight, barGap, this.tasks, dateFormat, scaleTime, scaleColor);
-    this.drawVertLabels(svg, sidePadding, titleHeight, barHeight, barGap, this.tasks, scaleColor);
+    this.drawHeader(svg);
+    this.drawGanttUpperLine(svg, scaleTime);
+    this.drawDayLines(svg, this.tasks, scaleTime);
+    this.drawDayLabel(svg, this.tasks, scaleTime);
+    this.drawGanttBottomLine(svg, this.tasks, scaleTime);
+    this.drawTodayLine(svg, this.tasks, scaleTime);
+    this.drawTasks(svg, this.tasks, dateFormat, scaleTime, scaleColor);
+    this.drawGroupNames(svg, this.tasks, scaleColor);
   }
 
-  private drawHeader(
-    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
-    svgWidth: number) {
+  /**
+   * 
+   */
+  private drawHeader(svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>) {
 
     svg.append('text')
       .text('Gantt Chart Process')
-      .attr('x', svgWidth / 2)
+      .attr('x', this.ganttSetting.svgWidth / 2)
       .attr('y', 25)
       .attr('text-anchor', 'middle')
       .attr('font-size', 18)
       .attr('fill', '#009FFC');
   }
 
-  private drawGrid(
-    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
-    svgWidth: number,
-    svgHeight: number,
-    sidePadding: number,
-    titleHeight: number,
-    scaleTime: d3.ScaleTime<number, number>) {
-
-    // const adjustTextLabels = selection => {
-    //   selection.selectAll('text')
-    //     .attr('transform', 'translate(' + daysToPixels(1, scaleTime) / 2 + ',0)');
-    // }
-
-    // // calculate the width of the days in the timeScale
-    // const daysToPixels = (days, timeScale) => {
-    //   const d1 = new Date();
-    //   return timeScale(d3.timeDay.offset(d1, days)) - timeScale(d1);
-    // }
-
-    // // 年月目盛り
-    // const xAxis1 = d3.axisTop(scaleTime)
-    //   .ticks(d3.timeDay, 1)
-    //   .tickSizeInner(0)
-    //   .tickSizeOuter(0)
-    //   .tickPadding(20)
-    //   .tickFormat((d: Date) => {
-    //     if (d.getDate() === 1) {
-    //       return d3.timeFormat('%Y/%m')(d).toString();
-    //     }
-    //     return null;
-    //   });
-
-    // // 年月目盛り反映
-    // const grid1 = svg.append('g')
-    //   .attr('transform', 'translate(' + sidePadding + ', ' + titleHeight + ')')
-    //   .call(xAxis1);
-
-    // // 目盛り横線削除
-    // grid1.select('.domain').remove();
-
-    // // 日目盛り
-    // const xAxis2 = d3.axisTop(scaleTime)
-    //   .ticks(d3.timeDay, 1)
-    //   .tickSize(-svgHeight + titleHeight + 20)
-    //   .tickFormat(d3.timeFormat('%d'))
-
-    // // 反映
-    // const grid2 = svg.append('g')
-    //   .attr('class', 'grid')
-    //   .attr('transform', 'translate(' + sidePadding + ', ' + titleHeight + ')')
-    //   .call(xAxis2)
-    //   .call(adjustTextLabels);
-
-    // // 目盛り・目盛り線の色の変更
-    // grid2.selectAll('.domain').style('color', '#D3D3D3')
-    // grid2.selectAll('line').style('color', '#D3D3D3')
-    // grid2.selectAll('text').remove();
-    // .style('color', 'black')
-    // .style('padding-left', '30')
-  }
-
+  /**
+   * 
+   */
   private drawDayLines(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
-    svgWidth: number,
-    svgHeight: number,
-    sidePadding: number,
-    titleHeight: number,
+    tasks: Task[],
     scaleTime: d3.ScaleTime<number, number>
   ) {
 
@@ -223,20 +200,52 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .data(rangeDays)
       .enter()
       .append('line')
-      .attr('x1', (d) => scaleTime(d) + sidePadding)
-      .attr('x2', (d) => scaleTime(d) + sidePadding)
-      .attr('y1', titleHeight)
-      .attr('y2', 300)
+      .attr('x1', (d) => scaleTime(d))
+      .attr('x2', (d) => scaleTime(d))
+      .attr('y1', this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2)
+      .attr('y2', this.getGanttHeight(tasks) + this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2)
       .attr('stroke-width', 1)
       .attr('stroke', '#D3D3D3');
   }
 
+  /**
+   * 
+   */
+  private drawDayLabel(
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
+    tasks: Task[],
+    scaleTime: d3.ScaleTime<number, number>
+  ) {
+
+    const [startDay, endDay] = scaleTime.domain();
+    const rangeDays: Date[] = [];
+    while (startDay <= endDay) {
+      rangeDays.push(new Date(startDay));
+      startDay.setDate(startDay.getDate() + 1);
+    }
+
+    svg.append('g')
+      .selectAll('text')
+      .data(rangeDays)
+      .enter()
+      .append('text')
+      .text(d => d3.timeFormat('%d')(d))
+      .attr('x', (d) => {
+        const nextDay = new Date(d).setDate(d.getDate() + 1);
+        return (scaleTime(d) + scaleTime(nextDay)) / 2;
+      })
+      .attr('y', this.ganttSetting.titleHeight - 10)
+      .attr('font-size', 11)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+  }
+
+  /**
+   * 
+   */
   private drawTodayLine(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
-    svgWidth: number,
-    svgHeight: number,
-    sidePadding: number,
-    titleHeight: number,
+    tasks: Task[],
     scaleTime: d3.ScaleTime<number, number>
   ) {
 
@@ -248,81 +257,87 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .data([toDay])
       .enter()
       .append('line')
-      .attr('x1', (d) => (scaleTime(nextDay) + scaleTime(d) + sidePadding * 2) / 2)
-      .attr('x2', (d) => (scaleTime(nextDay) + scaleTime(d) + sidePadding * 2) / 2)
-      .attr('y1', titleHeight)
-      .attr('y2', 300)
+      .attr('x1', (d) => (scaleTime(d) + scaleTime(nextDay)) / 2)
+      .attr('x2', (d) => (scaleTime(d) + scaleTime(nextDay)) / 2)
+      .attr('y1', this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2)
+      .attr('y2', this.getGanttHeight(tasks) + this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2)
       .attr('stroke-width', 1)
       .attr('stroke', '#EF410B');
   }
 
+  /**
+   * 
+   */
   private drawGanttUpperLine(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
-    svgWidth: number,
-    svgHeight: number,
-    sidePadding: number,
-    titleHeight: number,
     scaleTime: d3.ScaleTime<number, number>
   ) {
     const [startDay, endDay] = scaleTime.domain();
 
     svg.append('line')
-      .attr('x1', scaleTime(startDay))
-      .attr('x2', scaleTime(endDay) + sidePadding)
-      .attr('y1', titleHeight)
-      .attr('y2', titleHeight)
-      .attr('stroke-width', 1)
+      .attr('x1', scaleTime(startDay) - this.ganttSetting.itemNameWidth)
+      .attr('x2', scaleTime(endDay))
+      .attr('y1', this.ganttSetting.titleHeight)
+      .attr('y2', this.ganttSetting.titleHeight)
+      .attr('stroke-width', this.ganttSetting.upperLineStrokeWidth)
       .attr('stroke', '#D3D3D3');
   }
 
+  /**
+   * 
+   */
   private drawGanttBottomLine(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
-    svgWidth: number,
-    svgHeight: number,
-    sidePadding: number,
-    titleHeight: number,
+    tasks: Task[],
     scaleTime: d3.ScaleTime<number, number>
   ) {
     const [startDay, endDay] = scaleTime.domain();
 
     svg.append('line')
-      .attr('x1', scaleTime(startDay))
-      .attr('x2', scaleTime(endDay) + sidePadding)
-      .attr('y1', 300)
-      .attr('y2', 300)
+      .attr('x1', scaleTime(startDay) - this.ganttSetting.itemNameWidth)
+      .attr('x2', scaleTime(endDay))
+      .attr('y1', this.getGanttHeight(tasks) + this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2)
+      .attr('y2', this.getGanttHeight(tasks) + this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2)
       .attr('stroke-width', 1)
       .attr('stroke', '#D3D3D3');
   }
 
-  private drawRects(
+  /**
+   * 
+   */
+  private drawTasks(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
-    svgWidth: number,
-    svgHeight: number,
-    sidePadding: number,
-    titleHeight: number,
-    barHeight: number,
-    barGap: number,
     tasks: Task[],
     dateFormat: (dateString: string) => Date,
     scaleTime: d3.ScaleTime<number, number>,
     scaleColor: d3.ScaleOrdinal<string, string>) {
 
-    const categories = Array.from(new Set(tasks.map(task => task.type)));
+    const groups = this.getGroups(tasks);
+    const formatedTasks: { group: string, tasks: Task[] }[] =
+      groups.reduce((p, c) => {
+        return [...p, { group: c, tasks: tasks.filter(t => t.group === c) }]
+      }, []);
 
     // 背景色
     svg.append('g')
       .selectAll('rect')
-      .data(tasks)
+      .data(formatedTasks)
       .enter()
       .append('rect')
-      .attr('x', 0)
-      .attr('y', (d, i) => i * barGap + titleHeight - 2)
-      .attr('width', d => svgWidth - sidePadding / 2)
-      .attr('height', barGap)
+      .attr('x', this.ganttSetting.leftPadding)
+      .attr('y', (d, i) => {
+        let yPoint = this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2;
+        for (let j = 0; j < i; j++) {
+          yPoint += this.getGroupHeight(formatedTasks[j].group, tasks);
+        }
+        return yPoint;
+      })
+      .attr('width', d => this.ganttSetting.svgWidth - this.ganttSetting.rightPadding - this.ganttSetting.leftPadding)
+      .attr('height', d => this.getGroupHeight(d.group, tasks))
       .attr('stroke', 'none')
       .attr('fill', d => {
-        for (let i = 0; i < categories.length; i++) {
-          if (d.type === categories[i]) {
+        for (let i = 0; i < groups.length; i++) {
+          if (d.group === groups[i]) {
             return scaleColor(i.toString());
           }
         }
@@ -338,14 +353,14 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
     const innerRects = rectangles.append('rect')
       .attr('rx', 3)
       .attr('ry', 3)
-      .attr('x', d => scaleTime(dateFormat(d.startTime)) + sidePadding)
-      .attr('y', (d, i) => i * barGap + titleHeight)
+      .attr('x', d => scaleTime(dateFormat(d.startTime)))
+      .attr('y', (d, i) => this.getTaskYPoint(d, tasks) + this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2)
       .attr('width', d => (scaleTime(dateFormat(d.endTime)) - scaleTime(dateFormat(d.startTime))))
-      .attr('height', barHeight)
+      .attr('height', this.ganttSetting.barHeight)
       .attr('stroke', 'none')
       .attr('fill', d => {
-        for (let i = 0; i < categories.length; i++) {
-          if (d.type === categories[i]) {
+        for (let i = 0; i < groups.length; i++) {
+          if (d.group === groups[i]) {
             return scaleColor(i.toString());
           }
         }
@@ -355,13 +370,14 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
       .text(d => d.task)
       .attr('x', d => {
         return (scaleTime(dateFormat(d.endTime)) - scaleTime(dateFormat(d.startTime))) / 2 +
-          scaleTime(dateFormat(d.startTime)) +
-          sidePadding
+          scaleTime(dateFormat(d.startTime))
       })
-      .attr('y', (d, i) => i * barGap + 14 + titleHeight)
+      .attr('y', (d, i) => this.ganttSetting.titleHeight +
+        this.getTaskYPoint(d, tasks) +
+        this.ganttSetting.barHeight / 2)
       .attr('font-size', 11)
       .attr('text-anchor', 'middle')
-      .attr('text-height', barHeight)
+      .attr('dominant-baseline', 'central')
       .attr('fill', '#fff');
 
     // ツールチップ
@@ -383,25 +399,24 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
     });
   }
 
+  /**
+   * ツールチップの表示
+   * @param top
+   * @param left
+   */
   private showToolTip(
     top: string,
     left: string) {
 
-    let tag = '';
     const targetElement = d3.event.currentTarget;
-
     const selectedData = d3.select(targetElement).data()[0] as Task;
+
+    let tag = 'Task: ' + selectedData.task +
+      '<br/>' + 'Type: ' + selectedData.group +
+      '<br/>' + 'Starts: ' + selectedData.startTime +
+      '<br/>' + 'Ends: ' + selectedData.endTime;
     if (selectedData.details) {
-      tag = 'Task: ' + selectedData.task + '<br/>' +
-        'Type: ' + selectedData.type + '<br/>' +
-        'Starts: ' + selectedData.startTime + '<br/>' +
-        'Ends: ' + selectedData.endTime + '<br/>' +
-        'Details: ' + selectedData.details;
-    } else {
-      tag = 'Task: ' + selectedData.task + '<br/>' +
-        'Type: ' + selectedData.type + '<br/>' +
-        'Starts: ' + selectedData.startTime + '<br/>' +
-        'Ends: ' + selectedData.endTime;
+      tag += '<br/>' + 'Details: ' + selectedData.details;
     }
 
     const output = document.getElementById('tag');
@@ -411,50 +426,106 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
     output.style.display = 'block';
   }
 
+  /**
+   * ツールチップの非表示
+   */
   private hideToolTip() {
     const output = document.getElementById('tag');
     output.style.display = 'none';
   }
 
-  private drawVertLabels(
+  /**
+   * 
+   */
+  private drawGroupNames(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
-    sidePadding: number,
-    titleHeight: number,
-    barHeight: number,
-    barGap: number,
     tasks: Task[],
     scaleColor: d3.ScaleOrdinal<string, string>) {
 
-    const categories = Array.from(new Set(tasks.map(task => task.type)));
-    const numOccurances: { type: string; itemCount: number; }[] =
-      categories.reduce((p, c) => {
-        return [...p, { type: c, itemCount: tasks.map(task => task.type).filter(x => x === c).length || 0 }]
+    const groups = this.getGroups(tasks);
+    const formatedTasks: { group: string, tasks: Task[] }[] =
+      groups.reduce((p, c) => {
+        return [...p, { group: c, tasks: tasks.filter(t => t.group === c) }]
       }, []);
 
-    // without doing this, impossible to put grid lines behind text
     svg.append('g')
       .selectAll('text')
-      .data(numOccurances)
+      .data(formatedTasks)
       .enter()
       .append('text')
-      .text(d => d.type)
-      .attr('x', 10)
+      .text(d => d.group)
+      .attr('x', this.ganttSetting.leftPadding)
       .attr('y', (d, i) => {
-        if (i > 0) {
-          const prevGap = numOccurances.reduce((p, c, index) => index < i ? p += c.itemCount : p, 0);
-          return d.itemCount * barGap / 2 + prevGap * barGap + titleHeight;
-        } else {
-          return d.itemCount * barGap / 2 + titleHeight;
+        let yPoint = this.ganttSetting.titleHeight + this.ganttSetting.upperLineStrokeWidth / 2;
+        for (let j = 0; j < i; j++) {
+          yPoint += this.getGroupHeight(formatedTasks[j].group, tasks);
         }
+        return yPoint + this.getGroupHeight(d.group, tasks) / 2;
       })
       .attr('font-size', 11)
       .attr('text-anchor', 'start')
+      .attr('dominant-baseline', 'central')
       .attr('text-height', 14)
       .attr('fill', d => {
-        const index = categories.findIndex(c => c === d.type);
+        const index = groups.findIndex(c => c === d.group);
         if (index !== -1) {
           return d3.rgb(scaleColor(index.toString())).darker().toString();
         }
       });
+  }
+
+  /**
+   * 
+   */
+  private getGanttHeight(tasks: Task[]): number {
+    const groups = this.getGroups(tasks);
+    return groups.reduce((p, c) => p += this.getGroupHeight(c, tasks), 0);
+  }
+
+  /**
+   * 
+   */
+  private getGroupHeight(group: string, tasks: Task[]) {
+    const itemCount = tasks.filter(t => t.group === group).length;
+    return this.ganttSetting.groupPaddingTop +
+      this.ganttSetting.groupPaddingBottom +
+      this.ganttSetting.barHeight * itemCount +
+      this.ganttSetting.taskGap * (itemCount - 1);
+  }
+
+  /**
+   * 
+   */
+  private getTaskYPoint(task: Task, tasks: Task[]): number {
+    let yPoint = this.getTaskYPointInGroup(task.group, task.task, tasks);
+    const groups = this.getGroups(tasks);
+    const formatedTasks: { group: string, order: number, tasks: Task[] }[] =
+      groups.reduce((p, c, i) => {
+        return [...p, { group: c, order: i, tasks: tasks.filter(t => t.group === c) }]
+      }, []);
+    const taskOrder = formatedTasks.find(t => t.group === task.group).order;
+
+    for (const formatedTask of formatedTasks) {
+      if (formatedTask.order === taskOrder) { break; }
+      yPoint += this.getGroupHeight(formatedTask.group, tasks);
+    }
+    return yPoint;
+  }
+
+  /**
+   * 
+   */
+  private getTaskYPointInGroup(group: string, task: string, tasks: Task[]) {
+    const groupItem = tasks.filter(t => t.group === group);
+    let yPoint = this.ganttSetting.groupPaddingTop;
+    for (const item of groupItem) {
+      if (item.task === task) { break; }
+      yPoint += this.ganttSetting.barHeight + this.ganttSetting.taskGap;
+    }
+    return yPoint;
+  }
+
+  private getGroups(tasks: Task[]): string[] {
+    return Array.from(new Set(tasks.map(t => t.group)));
   }
 }
