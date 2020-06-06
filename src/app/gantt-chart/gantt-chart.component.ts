@@ -24,15 +24,15 @@ type ganttSetting = {
 }
 
 @Component({
-  selector: 'app-guntt-chart',
-  templateUrl: './guntt-chart.component.html',
-  styleUrls: ['./guntt-chart.component.scss']
+  selector: 'app-gantt-chart',
+  templateUrl: './gantt-chart.component.html',
+  styleUrls: ['./gantt-chart.component.scss']
 })
 
 /**
  * ガントチャート
  */
-export class GunttChartComponent implements OnInit, AfterViewInit {
+export class GanttChartComponent implements OnInit, AfterViewInit {
 
   private tasks: Task[] = [
     {
@@ -101,20 +101,20 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   constructor() { }
 
   /**
-   * 
+   *
    */
   ngOnInit(): void {
   }
 
   /**
-   * 
+   *
    */
   ngAfterViewInit() {
     this.drawGanttChart();
   }
 
   /**
-   * 
+   *
    */
   private drawGanttChart() {
 
@@ -166,7 +166,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private drawHeader(svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>) {
 
@@ -180,7 +180,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private drawDayLines(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
@@ -209,7 +209,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private drawDayLabel(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
@@ -241,7 +241,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private drawTodayLine(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
@@ -266,7 +266,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private drawGanttUpperLine(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
@@ -284,7 +284,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private drawGanttBottomLine(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
@@ -303,7 +303,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private drawTasks(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
@@ -435,7 +435,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private drawGroupNames(
     svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>,
@@ -475,7 +475,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private getGanttHeight(tasks: Task[]): number {
     const groups = this.getGroups(tasks);
@@ -483,7 +483,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private getGroupHeight(group: string, tasks: Task[]) {
     const itemCount = tasks.filter(t => t.group === group).length;
@@ -494,7 +494,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private getTaskYPoint(task: Task, tasks: Task[]): number {
     let yPoint = this.getTaskYPointInGroup(task.group, task.task, tasks);
@@ -513,7 +513,7 @@ export class GunttChartComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * 
+   *
    */
   private getTaskYPointInGroup(group: string, task: string, tasks: Task[]) {
     const groupItem = tasks.filter(t => t.group === group);

@@ -3,12 +3,12 @@ import { NgModule } from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { GunttChartComponent } from './guntt-chart/guntt-chart.component';
+import { GanttChartComponent } from './gantt-chart/gantt-chart.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    GunttChartComponent
+    GanttChartComponent
   ],
   imports: [
     BrowserModule,
