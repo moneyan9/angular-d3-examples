@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import * as d3 from 'd3';
 import * as moment from 'moment'
 
@@ -21,18 +21,37 @@ type Task = {
 })
 export class GanttChart2Component implements OnInit {
 
-  private strokeWidth = 0.5;
-  private strokeColor = '#dadada';
-
-  private yearMonthHeight = 20;
-  private datesHeight = 20;
-  private datesWidth = 28;
-  private groupsHeaderWidth = 200;
-
-  private taskHeight = 24;
-  private taskGap = 8;
-  private groupPaddingTop = 4;
-  private groupPaddingBottom = 4;
+  private config = {
+    base: {
+      width: undefined,
+      height: undefined,
+      dates: undefined,
+    },
+    container: {
+      width: 0,
+      height: 0,
+    },
+    stroke: {
+      width: 0.5,
+      color: '#dadada',
+    },
+    yearMonth: {
+      height: 20,
+    },
+    dates: {
+      width: 28,
+      height: 20,
+    },
+    group: {
+      width: 200,
+      paddingTop: 4,
+      paddingBottom: 4,
+    },
+    task: {
+      height: 24,
+      gap: 4,
+    }
+  }
 
   private groupedTasks: Group[] = [
     {
@@ -105,25 +124,51 @@ export class GanttChart2Component implements OnInit {
           {
             name: 'crying',
             startTime: new Date('2013-2-13'),
-            endTime: new Date('2013-2-16')
+            endTime: new Date('2013-5-16')
+          },
+        ]
+    },
+    {
+      name: 'meeting',
+      tasks:
+        [
+          {
+            name: 'xxx',
+            startTime: new Date('2013-1-28'),
+            endTime: new Date('2013-2-1'),
+            details: 'This actually did\'nt take any conceptualization'
+          },
+          {
+            name: 'yyy',
+            startTime: new Date('2013-2-1'),
+            endTime: new Date('2013-2-6'),
+            details: 'No sketching either, really'
+          },
+          {
+            name: 'zzz',
+            startTime: new Date('2013-2-6'),
+            endTime: new Date('2013-2-9')
           },
         ]
     },
   ];
 
-  constructor(
-    private hostElement: ElementRef
-  ) { }
+  constructor() { }
 
   ngOnInit(): void {
     this.drawGanttChart();
   }
 
+  /**
+   * ガントチャートの描画
+   */
   private drawGanttChart() {
 
+    // 初期化
+    this.initializeConfig();
+
     // コンテナの描画
-    const styles = getComputedStyle(this.hostElement.nativeElement);
-    const container = this.createContainer(styles.width, styles.height);
+    const container = this.createContainer();
     this.drawContainer(container);
 
     // 日付の描画
@@ -137,45 +182,67 @@ export class GanttChart2Component implements OnInit {
     // タスクの描画
   }
 
-  private createContainer(
-    width: string,
-    height: string
-  ): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
-    return d3.selectAll('.gantt-chart')
-      .append('svg')
-      .attr('width', width)
-      .attr('height', height);
+  /**
+   * 設定の初期化
+   */
+  private initializeConfig() {
+    const allTasks = this.groupedTasks.reduce((p: Task[], c) => { return [...p, ...c.tasks] }, []);
+    const minDate = d3.min(allTasks.map(task => task.startTime));
+    const maxDate = d3.max(allTasks.map(task => task.endTime));
+    const dates: Date[] = [];
+    for (let d = minDate; d <= maxDate; d = moment(d).add(1, 'days').toDate()) { dates.push(new Date(d)); }
+
+    this.config.base.dates = dates;
+    this.config.base.width = this.config.group.width + dates.length * this.config.dates.width;
+    this.config.base.height = this.config.yearMonth.height + this.config.dates.height +
+      this.groupedTasks.reduce((p, c) => p += this.getGroupHeight(c.tasks.length), 0);
   }
 
+  /**
+   * コンテナの生成
+   */
+  private createContainer(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
+    return d3.selectAll('.gantt-chart')
+      .append('svg')
+      .attr('width', this.config.base.width)
+      .attr('height', this.config.base.height);
+  }
+
+  /**
+   * コンテナの描画
+   */
   private drawContainer(
     container: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
     container.append('rect')
-      .attr('x', this.strokeWidth)
-      .attr('y', this.strokeWidth)
-      .attr('width', container.node().parentElement.clientWidth - this.strokeWidth * 2)
-      .attr('height', container.node().parentElement.clientHeight - this.strokeWidth * 2)
-      .attr('stroke-width', this.strokeWidth)
-      .attr('stroke', this.strokeColor)
+      .attr('x', this.config.stroke.width)
+      .attr('y', this.config.stroke.width)
+      .attr('width', this.config.base.width - this.config.stroke.width * 2)
+      .attr('height', this.config.base.height - this.config.stroke.width * 2)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color)
       .attr('fill', 'none');
 
     container.append('line')
       .attr('x1', 0)
-      .attr('x2', container.node().parentElement.clientWidth)
-      .attr('y1', this.yearMonthHeight + this.datesHeight)
-      .attr('y2', this.yearMonthHeight + this.datesHeight)
-      .attr('stroke-width', this.strokeWidth)
-      .attr('stroke', this.strokeColor);
+      .attr('x2', this.config.base.width)
+      .attr('y1', this.config.yearMonth.height + this.config.dates.height)
+      .attr('y2', this.config.yearMonth.height + this.config.dates.height)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color);
 
     container.append('line')
-      .attr('x1', this.groupsHeaderWidth)
-      .attr('x2', this.groupsHeaderWidth)
+      .attr('x1', this.config.group.width)
+      .attr('x2', this.config.group.width)
       .attr('y1', 0)
-      .attr('y2', container.node().parentElement.clientHeight)
-      .attr('stroke-width', this.strokeWidth)
-      .attr('stroke', this.strokeColor);
+      .attr('y2', this.config.base.height)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color);
   }
 
+  /**
+   * 日付の生成
+   */
   private createDates(
     container: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ): d3.Selection<SVGGElement, Date, SVGSVGElement, unknown> {
@@ -183,52 +250,72 @@ export class GanttChart2Component implements OnInit {
     const minDate = d3.min(allTasks.map(task => task.startTime));
     const maxDate = d3.max(allTasks.map(task => task.endTime));
     const dates: Date[] = [];
-    for (let d = minDate; d < maxDate; d = moment(d).add(1, 'days').toDate()) { dates.push(new Date(d)); }
+    for (let d = minDate; d <= maxDate; d = moment(d).add(1, 'days').toDate()) { dates.push(new Date(d)); }
 
     return container.selectAll('.dates')
-      .data(dates)
+      .data(this.config.base.dates as Date[])
       .enter()
       .append('g')
       .attr('class', 'dates')
       .attr('transform', (d, i) => {
-        const datesLeft = this.groupsHeaderWidth;
+        const datesLeft = this.config.group.width;
         return `translate(${datesLeft}, 0)`
       });
   }
 
+  /**
+   * 日付の描画
+   */
   private drawDates(
     dates: d3.Selection<SVGGElement, Date, SVGSVGElement, unknown>
   ) {
     dates.append('line')
-      .attr('x1', (d, i) => this.datesWidth * (i + 1))
-      .attr('x2', (d, i) => this.datesWidth * (i + 1))
+      .attr('x1', (d, i) => this.config.dates.width * (i + 1))
+      .attr('x2', (d, i) => this.config.dates.width * (i + 1))
       .attr('y1', (d, i, s) => {
-        if (i === s.length - 1) {
-          return 0;
-        } else if (moment(d).date() === moment(d).daysInMonth()) {
+        if (i === s.length - 1 ||
+          moment(d).date() === moment(d).daysInMonth()) {
           return 0;
         } else {
-          return this.yearMonthHeight + this.datesHeight;
+          return this.config.yearMonth.height + this.config.dates.height;
         }
       })
       .attr('y2', dates.node().parentElement.clientHeight)
-      .attr('stroke-width', this.strokeWidth)
-      .attr('stroke', this.strokeColor);
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color);
 
     dates.append('text')
-      .text(d => d3.timeFormat('%d')(d))
-      .attr('x', (d, i) => this.datesWidth * (i + 0.5))
-      .attr('y', this.yearMonthHeight + this.datesHeight / 2)
+      .text((d, i) => {
+        if (i === 0 ||
+          moment(d).date() === 1) {
+          return d3.timeFormat('%Y-%m')(d);
+        } else {
+          return null;
+        }
+      })
+      .attr('x', (d, i) => this.config.dates.width * (i + 0.5))
+      .attr('y', this.config.yearMonth.height / 2)
+      .attr('font-size', 11)
+      .attr('dominant-baseline', 'central');
+
+    dates.append('text')
+      .text(d => d3.timeFormat('%e')(d))
+      .attr('x', (d, i) => this.config.dates.width * (i + 0.5))
+      .attr('y', this.config.yearMonth.height + this.config.dates.height / 2)
       .attr('font-size', 11)
       .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central');
   }
 
+  /**
+   * グループの生成
+   */
   private createGroups(
     container: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ): d3.Selection<SVGGElement, Group, SVGSVGElement, unknown> {
     const getGroupTop = (index: number): number => {
       return this.groupedTasks.reduce((p, c, i) => {
-        return p += i <= index ? this.getGroupHeight(c.tasks.length) : 0;
+        return p += i < index ? this.getGroupHeight(c.tasks.length) : 0;
       }, 0);
     };
 
@@ -238,31 +325,46 @@ export class GanttChart2Component implements OnInit {
       .append('g')
       .attr('class', 'groups')
       .attr('transform', (d, i) => {
-        const groupTop = this.yearMonthHeight + this.datesHeight + getGroupTop(i)
+        const groupTop = this.config.yearMonth.height + this.config.dates.height + getGroupTop(i)
         return `translate(0, ${groupTop})`
       });
   }
 
+  /**
+   * グループの描画
+   */
   private drawGroups(
     groups: d3.Selection<SVGGElement, Group, SVGSVGElement, unknown>
   ) {
     groups.append('line')
       .attr('x1', 0)
       .attr('x2', groups.node().parentElement.clientWidth)
-      .attr('y1', 0)
-      .attr('y2', 0)
-      .attr('stroke-width', this.strokeWidth)
-      .attr('stroke', this.strokeColor)
+      .attr('y1', d => this.getGroupHeight(d.tasks.length))
+      .attr('y2', d => this.getGroupHeight(d.tasks.length))
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color)
+
+    groups.append('text')
+      .text(d => d.name)
+      .attr('x', 0)
+      .attr('y', d => this.getGroupHeight(d.tasks.length) / 2)
+      .attr('font-size', 11)
   }
 
+  /**
+   * タスクの描画
+   */
   private draTasks(
     groups: d3.Selection<SVGGElement, Group, SVGSVGElement, unknown>
   ) {
   }
 
+  /**
+   * グループの高さの取得
+   */
   private getGroupHeight(taskLength: number): number {
-    return this.taskHeight * taskLength +
-      this.taskGap * (taskLength - 1) +
-      this.groupPaddingTop + this.groupPaddingBottom;
+    return this.config.task.height * taskLength +
+      this.config.task.gap * (taskLength - 1) +
+      this.config.group.paddingTop + this.config.group.paddingBottom;
   };
 }
