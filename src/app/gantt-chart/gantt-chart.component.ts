@@ -120,7 +120,7 @@ export class GanttChartComponent implements OnInit, AfterViewInit {
 
     this.ganttSetting = {
       svgWidth: 800,
-      svgHeight: 600,
+      svgHeight: 400,
       titleHeight: 75,
       upperLineStrokeWidth: 1,
       itemNameWidth: 100,
