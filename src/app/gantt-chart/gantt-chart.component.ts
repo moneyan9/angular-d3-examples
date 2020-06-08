@@ -401,8 +401,6 @@ export class GanttChartComponent implements OnInit, AfterViewInit {
 
   /**
    * ツールチップの表示
-   * @param top
-   * @param left
    */
   private showToolTip(
     top: string,

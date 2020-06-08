@@ -16,11 +16,11 @@ type Task = {
 }
 
 @Component({
-  selector: 'app-gantt-chart2',
-  templateUrl: './gantt-chart2.component.html',
-  styleUrls: ['./gantt-chart2.component.scss']
+  selector: 'app-gantt-chart3',
+  templateUrl: './gantt-chart3.component.html',
+  styleUrls: ['./gantt-chart3.component.scss']
 })
-export class GanttChart2Component implements OnInit, AfterViewInit {
+export class GanttChart3Component implements OnInit, AfterViewInit {
 
   chartId = `chart_${UUID.UUID()}`;
 
