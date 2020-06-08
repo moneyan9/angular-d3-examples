@@ -246,19 +246,13 @@ export class GanttChart2Component implements OnInit {
   private createDates(
     container: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ): d3.Selection<SVGGElement, Date, SVGSVGElement, unknown> {
-    const allTasks = this.groupedTasks.reduce((p: Task[], c) => { return [...p, ...c.tasks] }, []);
-    const minDate = d3.min(allTasks.map(task => task.startTime));
-    const maxDate = d3.max(allTasks.map(task => task.endTime));
-    const dates: Date[] = [];
-    for (let d = minDate; d <= maxDate; d = moment(d).add(1, 'days').toDate()) { dates.push(new Date(d)); }
-
     return container.selectAll('.dates')
       .data(this.config.base.dates as Date[])
       .enter()
       .append('g')
       .attr('class', 'dates')
       .attr('transform', (d, i) => {
-        const datesLeft = this.config.group.width;
+        const datesLeft = this.config.group.width + this.config.dates.width * i;
         return `translate(${datesLeft}, 0)`
       });
   }
@@ -270,8 +264,8 @@ export class GanttChart2Component implements OnInit {
     dates: d3.Selection<SVGGElement, Date, SVGSVGElement, unknown>
   ) {
     dates.append('line')
-      .attr('x1', (d, i) => this.config.dates.width * (i + 1))
-      .attr('x2', (d, i) => this.config.dates.width * (i + 1))
+      .attr('x1', this.config.dates.width)
+      .attr('x2', this.config.dates.width)
       .attr('y1', (d, i, s) => {
         if (i === s.length - 1 ||
           moment(d).date() === moment(d).daysInMonth()) {
@@ -293,14 +287,14 @@ export class GanttChart2Component implements OnInit {
           return null;
         }
       })
-      .attr('x', (d, i) => this.config.dates.width * (i + 0.5))
+      .attr('x', this.config.dates.width * 0.5)
       .attr('y', this.config.yearMonth.height / 2)
       .attr('font-size', 11)
       .attr('dominant-baseline', 'central');
 
     dates.append('text')
       .text(d => d3.timeFormat('%e')(d))
-      .attr('x', (d, i) => this.config.dates.width * (i + 0.5))
+      .attr('x', this.config.dates.width * 0.5)
       .attr('y', this.config.yearMonth.height + this.config.dates.height / 2)
       .attr('font-size', 11)
       .attr('text-anchor', 'middle')
