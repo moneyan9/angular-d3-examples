@@ -200,7 +200,7 @@ export class GanttChart3Component implements OnInit, AfterViewInit {
     for (let d = minDate; d <= maxDate; d = moment(d).add(1, 'days').toDate()) { dates.push(new Date(d)); }
 
     this.config.base.dates = dates;
-    this.config.base.width = this.config.group.width + dates.length * this.config.dates.width;
+    this.config.base.width = this.config.group.width + this.config.dates.width * dates.length;
     this.config.base.height = this.config.yearMonth.height + this.config.dates.height +
       this.groupedTasks.reduce((p, c) => p += this.getGroupHeight(c.tasks.length), 0);
   }
@@ -209,12 +209,10 @@ export class GanttChart3Component implements OnInit, AfterViewInit {
    * コンテナの生成
    */
   private createContainer(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
-    const xxx = d3.select(`#${this.chartId}`)
+    return d3.select(`#${this.chartId}`)
       .append('svg')
       .attr('width', this.config.base.width)
       .attr('height', this.config.base.height);
-    console.log(xxx);
-    return xxx;
   }
 
   /**
