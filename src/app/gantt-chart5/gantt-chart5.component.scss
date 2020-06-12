@@ -29,3 +29,15 @@
 .tasks {
   overflow: auto;
 }
+
+#today-button {
+  background: #ef410b;
+  color: #fff;
+  font-size: 10px;
+  padding: 0 5px;
+  position: absolute;
+  top: 8px;
+  border-radius: 3px;
+  line-height: 28px;
+  cursor: pointer;
+}
