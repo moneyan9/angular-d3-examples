@@ -54,7 +54,7 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     },
     tasks: {
       height: undefined,
-      task:{
+      task: {
         height: 24,
         gap: 4,
       },
@@ -226,14 +226,21 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   private drawCorner(
     corner: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
-    corner.append('rect')
-      .attr('x', this.config.stroke.width)
-      .attr('y', this.config.stroke.width)
-      .attr('width', this.config.groups.width - this.config.stroke.width * 2)
-      .attr('height', this.config.dates.months.height + this.config.dates.days.height - this.config.stroke.width * 2)
+    corner.append('line')
+      .attr('x1', 0)
+      .attr('x2', this.config.groups.width)
+      .attr('y1', this.config.dates.months.height + this.config.dates.days.height)
+      .attr('y2', this.config.dates.months.height + this.config.dates.days.height)
       .attr('stroke-width', this.config.stroke.width)
-      .attr('stroke', this.config.stroke.color)
-      .attr('fill', 'none');
+      .attr('stroke', this.config.stroke.color);
+
+    corner.append('line')
+      .attr('x1', this.config.groups.width)
+      .attr('x2', this.config.groups.width)
+      .attr('y1', 0)
+      .attr('y2', this.config.dates.months.height + this.config.dates.days.height)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color);
   }
 
   /**
@@ -252,14 +259,13 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   private drawDates(
     dates: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
-    dates.append('rect')
-      .attr('x', this.config.stroke.width)
-      .attr('y', this.config.stroke.width)
-      .attr('width', this.config.dates.width - this.config.stroke.width * 2)
-      .attr('height', this.config.dates.months.height + this.config.dates.days.height - this.config.stroke.width * 2)
+    dates.append('line')
+      .attr('x1', 0)
+      .attr('x2', this.config.dates.width)
+      .attr('y1', this.config.dates.months.height + this.config.dates.days.height)
+      .attr('y2', this.config.dates.months.height + this.config.dates.days.height)
       .attr('stroke-width', this.config.stroke.width)
-      .attr('stroke', this.config.stroke.color)
-      .attr('fill', 'none');
+      .attr('stroke', this.config.stroke.color);
   }
 
   /**
@@ -278,14 +284,13 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   private drawGroups(
     groups: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
-    groups.append('rect')
-      .attr('x', this.config.stroke.width)
-      .attr('y', this.config.stroke.width)
-      .attr('width', this.config.groups.width - this.config.stroke.width * 2)
-      .attr('height', this.config.tasks.height - this.config.stroke.width * 2)
+    groups.append('line')
+      .attr('x1', this.config.groups.width)
+      .attr('x2', this.config.groups.width)
+      .attr('y1', 0)
+      .attr('y2', this.config.tasks.height)
       .attr('stroke-width', this.config.stroke.width)
-      .attr('stroke', this.config.stroke.color)
-      .attr('fill', 'none');
+      .attr('stroke', this.config.stroke.color);
   }
 
   /**
@@ -304,14 +309,6 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   private drawTasks(
     groups: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
-    groups.append('rect')
-      .attr('x', this.config.stroke.width)
-      .attr('y', this.config.stroke.width)
-      .attr('width', this.config.dates.width - this.config.stroke.width * 2)
-      .attr('height', this.config.tasks.height - this.config.stroke.width * 2)
-      .attr('stroke-width', this.config.stroke.width)
-      .attr('stroke', this.config.stroke.color)
-      .attr('fill', 'none');
   }
 
   /**
