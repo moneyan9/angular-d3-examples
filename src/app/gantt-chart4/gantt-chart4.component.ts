@@ -28,10 +28,6 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   tasksId = `chart_${UUID.UUID()}`;
 
   private config = {
-    container: {
-      width: 0,
-      height: 0,
-    },
     stroke: {
       width: 0.5,
       color: '#dadada',

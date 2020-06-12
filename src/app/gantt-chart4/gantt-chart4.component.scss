@@ -10,25 +10,22 @@
   display: grid;
   grid-template-rows: 40px 1fr;
   grid-template-columns: 200px 1fr;
-  border:solid 1px #dadada;
+  border: solid 1px #dadada;
+  overflow: hidden;
 }
 
 .corner {
-  // background-color: gray;
   overflow: hidden;
 }
 
 .dates {
-  // background-color: pink;
   overflow: hidden;
 }
 
 .groups {
-  // background-color: skyblue;
   overflow: hidden;
 }
 
 .tasks {
-  // background-color: greenyellow;
   overflow: auto;
 }
