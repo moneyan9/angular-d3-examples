@@ -175,19 +175,21 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     this.initializeConfig();
 
     // コーナーの描画
-    const corner = this.createCorner();
+    const corner = this.createCornerArea();
     this.drawCorner(corner);
 
     // 日付の描画
-    const dates = this.createDates();
+    const dates = this.createDatesArea();
     this.drawDates(dates);
 
     // グループの描画
-    const groups = this.createGroups();
+    const groups = this.createGroupsArea();
     this.drawGroups(groups);
 
     // タスクの描画
-    const tasks = this.createTasks();
+    const tasks = this.createTasksArea();
+    this.drawTasksDates(tasks);
+    this.drawTasksGroups(tasks);
     this.drawTasks(tasks);
   }
 
@@ -207,9 +209,9 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * コーナーの生成
+   * コーナーエリアの生成
    */
-  private createCorner(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
+  private createCornerArea(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
     return d3.select(`#${this.cornerId}`)
       .append('svg')
       .attr('width', this.config.groups.width)
@@ -220,9 +222,9 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
    * コーナーの描画
    */
   private drawCorner(
-    corner: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+    svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
-    corner.append('line')
+    svg.append('line')
       .attr('x1', 0)
       .attr('x2', this.config.groups.width)
       .attr('y1', this.config.dates.months.height + this.config.dates.days.height)
@@ -230,7 +232,7 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('stroke-width', this.config.stroke.width)
       .attr('stroke', this.config.stroke.color);
 
-    corner.append('line')
+    svg.append('line')
       .attr('x1', this.config.groups.width)
       .attr('x2', this.config.groups.width)
       .attr('y1', 0)
@@ -240,34 +242,84 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * 日付の生成
+   * 日付エリアの生成
    */
-  private createDates(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
+  private createDatesArea(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
     return d3.select(`#${this.datesId}`)
       .append('svg')
       .attr('width', this.config.dates.width)
-      .attr('height', this.config.dates.months.height + this.config.dates.days.height);
+      .attr('height', this.config.dates.months.height + this.config.dates.days.height)
   }
 
   /**
    * 日付の描画
    */
   private drawDates(
-    dates: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+    area: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
-    dates.append('line')
+    const dates = this.getDatesSelection(area);
+    const datesToday = dates.filter(d => moment(d).startOf('day').isSame(moment('2013-02-05'), 'day'));
+    const datesExceptToday = dates.filter(d => !moment(d).startOf('day').isSame(moment('2013-02-05'), 'day'));
+
+    // 日付線（上）
+    area.append('line')
       .attr('x1', 0)
       .attr('x2', this.config.dates.width)
       .attr('y1', this.config.dates.months.height + this.config.dates.days.height)
       .attr('y2', this.config.dates.months.height + this.config.dates.days.height)
       .attr('stroke-width', this.config.stroke.width)
       .attr('stroke', this.config.stroke.color);
+
+    // 年月テキスト
+    dates.append('text')
+      .filter((d, i) => i === 0 || moment(d).date() === 1)
+      .text(d => d3.timeFormat('%Y-%m')(d))
+      .attr('x', this.config.dates.days.width / 2)
+      .attr('y', this.config.dates.months.height / 2)
+      .attr('font-size', 11)
+      .attr('dominant-baseline', 'central');
+
+    // 日付テキスト（今日以外）
+    datesExceptToday.append('text')
+      .text(d => d3.timeFormat('%e')(d))
+      .attr('x', this.config.dates.days.width / 2)
+      .attr('y', this.config.dates.months.height + this.config.dates.days.height / 2)
+      .attr('font-size', 11)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central');
+
+    // 日付サークル（今日）
+    datesToday.append('circle')
+      .attr('cx', this.config.dates.days.width / 2)
+      .attr('cy', this.config.dates.months.height + this.config.dates.days.height / 2)
+      .attr('r', this.config.dates.months.height / 2)
+      .attr('fill', 'red')
+
+    // 日付テキスト（今日）
+    datesToday.append('text')
+      .text(d => d3.timeFormat('%e')(d))
+      .attr('x', this.config.dates.days.width / 2)
+      .attr('y', this.config.dates.months.height + this.config.dates.days.height / 2)
+      .attr('font-size', 11)
+      .attr('fill', 'white')
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central');
+
+    // 月ライン
+    dates.append('line')
+      .filter(d => moment(d).date() === moment(d).daysInMonth())
+      .attr('x1', this.config.dates.days.width)
+      .attr('x2', this.config.dates.days.width)
+      .attr('y1', 0)
+      .attr('y2', this.config.dates.months.height + this.config.dates.days.height)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color);
   }
 
   /**
-   * グループの生成
+   * グループエリアの生成
    */
-  private createGroups(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
+  private createGroupsArea(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
     return d3.select(`#${this.groupsId}`)
       .append('svg')
       .attr('width', this.config.groups.width)
@@ -278,21 +330,40 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
    * グループの描画
    */
   private drawGroups(
-    groups: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+    area: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
-    groups.append('line')
+    const groups = this.getGroupsSelection(area);
+
+    // ライン（上）
+    area.append('line')
       .attr('x1', this.config.groups.width)
       .attr('x2', this.config.groups.width)
       .attr('y1', 0)
       .attr('y2', this.config.tasks.height)
       .attr('stroke-width', this.config.stroke.width)
       .attr('stroke', this.config.stroke.color);
+
+    // グループテキスト
+    groups.append('text')
+      .text(d => d.name)
+      .attr('x', 0)
+      .attr('y', d => this.getGroupHeight(d.tasks.length) / 2)
+      .attr('font-size', 11)
+
+    // グループライン
+    groups.append('line')
+      .attr('x1', 0)
+      .attr('x2', this.config.groups.width)
+      .attr('y1', d => this.getGroupHeight(d.tasks.length))
+      .attr('y2', d => this.getGroupHeight(d.tasks.length))
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color)
   }
 
   /**
-   * タスクの生成
+   * タスクエリアの生成
    */
-  private createTasks(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
+  private createTasksArea(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
     return d3.select(`#${this.tasksId}`)
       .append('svg')
       .attr('width', this.config.dates.width)
@@ -300,11 +371,103 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   }
 
   /**
+   * タスク（日付）の描画
+   */
+  private drawTasksDates(
+    area: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+  ) {
+    const dates = this.getDatesSelection(area);
+    const datesToday = dates.filter(d => moment(d).startOf('day').isSame(moment('2013-02-05'), 'day'));
+    const datesHoliday = dates.filter(d => moment(d).isoWeekday() === 6 || moment(d).isoWeekday() === 7);
+
+    // 日付ライン
+    dates.append('line')
+      .attr('x1', this.config.dates.days.width)
+      .attr('x2', this.config.dates.days.width)
+      .attr('y1', 0)
+      .attr('y2', this.config.tasks.height)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color);
+
+    // 日付ライン（今日）
+    datesToday.append('line')
+      .attr('x1', this.config.dates.days.width / 2)
+      .attr('x2', this.config.dates.days.width / 2)
+      .attr('y1', 0)
+      .attr('y2', this.config.tasks.height)
+      .attr('stroke-width', 1)
+      .attr('stroke', 'red');
+
+    // 休日
+    datesHoliday.append('rect')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', this.config.dates.days.width)
+      .attr('height', this.config.tasks.height)
+      .attr('fill', '#f5f5f5');
+  }
+
+  /**
+   * タスクの描画（グループ）
+   */
+  private drawTasksGroups(
+    area: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+  ) {
+    const groups = this.getGroupsSelection(area);
+
+    // グループライン
+    groups.append('line')
+      .attr('x1', 0)
+      .attr('x2', this.config.dates.width)
+      .attr('y1', d => this.getGroupHeight(d.tasks.length))
+      .attr('y2', d => this.getGroupHeight(d.tasks.length))
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color)
+  }
+
+  /**
    * タスクの描画
    */
   private drawTasks(
-    groups: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+    area: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
+    const groups = this.getGroupsSelection(area);
+  }
+
+  /**
+   * 日付セレクションの生成
+   */
+  private getDatesSelection(
+    area: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+  ): d3.Selection<SVGGElement, Date, SVGSVGElement, unknown> {
+    return area.selectAll('.dates')
+      .data(this.config.dates.days.data as Date[])
+      .enter()
+      .append('g')
+      .attr('class', 'dates')
+      .attr('transform', (d, i) => `translate(${this.config.dates.days.width * i}, 0)`);
+  }
+
+  /**
+   * グループセレクションの生成
+   */
+  private getGroupsSelection(
+    area: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+  ): d3.Selection<SVGGElement, Group, SVGSVGElement, unknown> {
+
+    // グループトップ位置
+    const getGroupTop = (index: number): number => {
+      return this.groupedTasks.reduce((p, c, i) => {
+        return p += i < index ? this.getGroupHeight(c.tasks.length) : 0;
+      }, 0);
+    };
+
+    return area.selectAll('.groups')
+      .data(this.groupedTasks)
+      .enter()
+      .append('g')
+      .attr('class', 'groups')
+      .attr('transform', (d, i) => `translate(0, ${getGroupTop(i)})`);
   }
 
   /**
@@ -314,5 +477,21 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     return this.config.tasks.task.height * taskLength +
       this.config.tasks.task.gap * (taskLength - 1) +
       this.config.groups.paddingTop + this.config.groups.paddingBottom;
+  };
+
+  /**
+   * タスクのトップ位置の取得
+   */
+  private getTaskTop(index: number): number {
+    return this.config.groups.paddingTop +
+      this.config.tasks.task.height * index +
+      this.config.tasks.task.gap * index;
+  };
+
+  /**
+   * タスクの左位置の取得
+   */
+  private getTaskLeft(date: Date): number {
+    return this.config.dates.width * (this.config.dates.days.data as Date[]).findIndex(d => moment(d).isSame(date));
   };
 }
