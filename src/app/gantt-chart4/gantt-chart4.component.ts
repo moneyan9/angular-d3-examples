@@ -45,8 +45,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     },
     groups: {
       width: 200,
-      taskPaddingTop: 4,
-      taskPaddingBottom: 4,
+      taskPaddingTop: 8,
+      taskPaddingBottom: 8,
     },
     tasks: {
       task: {
@@ -316,7 +316,7 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('stroke-width', this.config.stroke.width)
       .attr('stroke', this.config.stroke.color)
   }
-  d
+
   /**
    * タスクの描画
    */

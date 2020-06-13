@@ -1,10 +1,11 @@
 <div class="container">
   <div [id]="cornerId" class="corner">
   </div>
-  <div [id]="datesId" class="dates">
+  <div [id]="datesId" class="dates" #dates>
   </div>
-  <div [id]="groupsId" class="groups">
+  <div [id]="groupsId" class="groups" #groups>
   </div>
-  <div [id]="tasksId" class="tasks">
+  <div [id]="tasksId" class="tasks" #tasks
+    (scroll)="groups.scrollTop = tasks.scrollTop; dates.scrollLeft = tasks.scrollLeft;">
   </div>
 </div>
