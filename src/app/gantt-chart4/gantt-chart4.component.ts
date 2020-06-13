@@ -83,27 +83,27 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     this.drawCorner(corner);
 
     // 日付の描画
-    const datesCanvas = this.createBasicCanvas(
+    const dates = this.createBasicCanvas(
       this.datesId,
       this.datesWidth,
       this.config.dates.months.height + this.config.dates.days.height);
-    this.drawDates(datesCanvas);
+    this.drawDates(dates);
 
     // グループの描画
-    const groupsCanvas = this.createBasicCanvas(
+    const groups = this.createBasicCanvas(
       this.groupsId,
       this.config.groups.width,
       this.tasksHeight);
-    this.drawGroups(groupsCanvas);
+    this.drawGroups(groups);
 
     // タスクの描画
-    const tasksCanvas = this.createBasicCanvas(
+    const tasks = this.createBasicCanvas(
       this.tasksId,
       this.datesWidth,
       this.tasksHeight);
-    this.drawTasksDates(tasksCanvas);
-    // this.drawTasksGroups(tasksCanvas);
-    this.drawTasks(tasksCanvas);
+    this.drawTasksDates(tasks);
+    this.drawTasksGroups(tasks);
+    this.drawTasks(tasks);
   }
 
   /**
@@ -157,8 +157,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     canvas: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
     const dates = this.getDatesSelection(canvas);
-    const datesToday = dates.filter(d => moment(d).startOf('day').isSame(moment('2013-02-05'), 'day'));
-    const datesExceptToday = dates.filter(d => !moment(d).startOf('day').isSame(moment('2013-02-05'), 'day'));
+    const datesToday = dates.filter(d => moment(d).startOf('day').isSame(moment('2013-02-12'), 'day'));
+    const datesExceptToday = dates.filter(d => !moment(d).startOf('day').isSame(moment('2013-02-12'), 'day'));
     const firstDayOfMonth = dates.filter((d, i) => i === 0 || moment(d).date() === 1);
     const lastDayOfMonth = dates.filter(d => moment(d).date() === moment(d).daysInMonth());
 
@@ -265,7 +265,7 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     canvas: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
     const dates = this.getDatesSelection(canvas);
-    const datesToday = dates.filter(d => moment(d).startOf('day').isSame(moment('2013-02-05'), 'day'));
+    const datesToday = dates.filter(d => moment(d).startOf('day').isSame(moment('2013-02-12'), 'day'));
     const datesHoliday = dates.filter(d => moment(d).isoWeekday() === 6 || moment(d).isoWeekday() === 7);
 
     // days line
@@ -285,7 +285,7 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('x2', this.config.dates.days.day.width / 2)
       .attr('y1', 0)
       .attr('y2', this.tasksHeight)
-      .attr('stroke-width', 1)
+      .attr('stroke-width', this.config.stroke.width)
       .attr('stroke', 'red');
 
     // holiday back groupnd
@@ -438,7 +438,12 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   private getTasksSelection(
     canvas: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ): d3.Selection<SVGGElement, Task, SVGGElement, Group> {
-    return this.getGroupsSelection(canvas)
+    return canvas.selectAll('.task-groups')
+      .data(this.groupedTasks)
+      .enter()
+      .append('g')
+      .attr('class', 'task-groups')
+      .attr('transform', d => `translate(0, ${this.getGroupTop(d)})`)
       .selectAll('.tasks')
       .data(d => d.tasks)
       .enter()
