@@ -50,8 +50,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     },
     tasks: {
       task: {
-        height: 24,
-        gap: 4,
+        height: 16,
+        gap: 8,
       },
     }
   }
@@ -83,27 +83,27 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     this.drawCorner(corner);
 
     // 日付の描画
-    const dates = this.createBasicCanvas(
+    const datesCanvas = this.createBasicCanvas(
       this.datesId,
       this.datesWidth,
       this.config.dates.months.height + this.config.dates.days.height);
-    this.drawDates(dates);
+    this.drawDates(datesCanvas);
 
     // グループの描画
-    const groups = this.createBasicCanvas(
+    const groupsCanvas = this.createBasicCanvas(
       this.groupsId,
       this.config.groups.width,
       this.tasksHeight);
-    this.drawGroups(groups);
+    this.drawGroups(groupsCanvas);
 
     // タスクの描画
-    const tasks = this.createBasicCanvas(
+    const tasksCanvas = this.createBasicCanvas(
       this.tasksId,
       this.datesWidth,
       this.tasksHeight);
-    this.drawTasksDates(tasks);
-    this.drawTasksGroups(tasks);
-    this.drawTasks(tasks);
+    this.drawTasksDates(tasksCanvas);
+    // this.drawTasksGroups(tasksCanvas);
+    this.drawTasks(tasksCanvas);
   }
 
   /**
@@ -130,7 +130,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     canvas: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
     // bottom line
-    canvas.append('line')
+    canvas
+      .append('line')
       .attr('x1', 0)
       .attr('x2', this.config.groups.width)
       .attr('y1', this.config.dates.months.height + this.config.dates.days.height)
@@ -139,7 +140,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('stroke', this.config.stroke.color);
 
     // right line
-    canvas.append('line')
+    canvas
+      .append('line')
       .attr('x1', this.config.groups.width)
       .attr('x2', this.config.groups.width)
       .attr('y1', 0)
@@ -157,10 +159,12 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     const dates = this.getDatesSelection(canvas);
     const datesToday = dates.filter(d => moment(d).startOf('day').isSame(moment('2013-02-05'), 'day'));
     const datesExceptToday = dates.filter(d => !moment(d).startOf('day').isSame(moment('2013-02-05'), 'day'));
+    const firstDayOfMonth = dates.filter((d, i) => i === 0 || moment(d).date() === 1);
+    const lastDayOfMonth = dates.filter(d => moment(d).date() === moment(d).daysInMonth());
 
     // year month text
-    dates.append('text')
-      .filter((d, i) => i === 0 || moment(d).date() === 1)
+    firstDayOfMonth
+      .append('text')
       .text(d => d3.timeFormat('%Y-%m')(d))
       .attr('x', this.config.dates.days.day.width / 2)
       .attr('y', this.config.dates.months.height / 2)
@@ -168,7 +172,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('dominant-baseline', 'central');
 
     // days text
-    datesExceptToday.append('text')
+    datesExceptToday
+      .append('text')
       .text(d => d3.timeFormat('%e')(d))
       .attr('x', this.config.dates.days.day.width / 2)
       .attr('y', this.config.dates.months.height + this.config.dates.days.height / 2)
@@ -177,14 +182,16 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('dominant-baseline', 'central');
 
     // today circle
-    datesToday.append('circle')
+    datesToday
+      .append('circle')
       .attr('cx', this.config.dates.days.day.width / 2)
       .attr('cy', this.config.dates.months.height + this.config.dates.days.height / 2)
       .attr('r', this.config.dates.months.height / 2)
       .attr('fill', 'red')
 
     // todays text
-    datesToday.append('text')
+    datesToday
+      .append('text')
       .text(d => d3.timeFormat('%e')(d))
       .attr('x', this.config.dates.days.day.width / 2)
       .attr('y', this.config.dates.months.height + this.config.dates.days.height / 2)
@@ -194,8 +201,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('dominant-baseline', 'central');
 
     // first day of month line
-    dates.append('line')
-      .filter(d => moment(d).date() === moment(d).daysInMonth())
+    lastDayOfMonth
+      .append('line')
       .attr('x1', this.config.dates.days.day.width)
       .attr('x2', this.config.dates.days.day.width)
       .attr('y1', 0)
@@ -204,7 +211,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('stroke', this.config.stroke.color);
 
     // bottom line
-    canvas.append('line')
+    canvas
+      .append('line')
       .attr('x1', 0)
       .attr('x2', this.datesWidth)
       .attr('y1', this.config.dates.months.height + this.config.dates.days.height)
@@ -222,14 +230,16 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     const groups = this.getGroupsSelection(canvas);
 
     // group text
-    groups.append('text')
+    groups
+      .append('text')
       .text(d => d.name)
       .attr('x', 0)
       .attr('y', d => this.getGroupHeight(d.tasks.length) / 2)
       .attr('font-size', 11)
 
     // group line
-    groups.append('line')
+    groups
+      .append('line')
       .attr('x1', 0)
       .attr('x2', this.config.groups.width)
       .attr('y1', d => this.getGroupHeight(d.tasks.length))
@@ -238,7 +248,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('stroke', this.config.stroke.color)
 
     // right line
-    canvas.append('line')
+    canvas
+      .append('line')
       .attr('x1', this.config.groups.width)
       .attr('x2', this.config.groups.width)
       .attr('y1', 0)
@@ -258,7 +269,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     const datesHoliday = dates.filter(d => moment(d).isoWeekday() === 6 || moment(d).isoWeekday() === 7);
 
     // days line
-    dates.append('line')
+    dates
+      .append('line')
       .attr('x1', this.config.dates.days.day.width)
       .attr('x2', this.config.dates.days.day.width)
       .attr('y1', 0)
@@ -267,7 +279,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('stroke', this.config.stroke.color);
 
     // today line
-    datesToday.append('line')
+    datesToday
+      .append('line')
       .attr('x1', this.config.dates.days.day.width / 2)
       .attr('x2', this.config.dates.days.day.width / 2)
       .attr('y1', 0)
@@ -276,7 +289,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('stroke', 'red');
 
     // holiday back groupnd
-    datesHoliday.append('rect')
+    datesHoliday
+      .append('rect')
       .attr('x', 0)
       .attr('y', 0)
       .attr('width', this.config.dates.days.day.width)
@@ -293,7 +307,8 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
     const groups = this.getGroupsSelection(canvas);
 
     // group line
-    groups.append('line')
+    groups
+      .append('line')
       .attr('x1', 0)
       .attr('x2', this.datesWidth)
       .attr('y1', d => this.getGroupHeight(d.tasks.length))
@@ -301,14 +316,77 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
       .attr('stroke-width', this.config.stroke.width)
       .attr('stroke', this.config.stroke.color)
   }
-
+  d
   /**
    * タスクの描画
    */
   private drawTasks(
     canvas: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
-    const groups = this.getGroupsSelection(canvas);
+    const tasks = this.getTasksSelection(canvas);
+
+    // カラースケール
+    const colorScale = d3.scaleOrdinal()
+      .domain(['started', 'inProgress', 'completed'])
+      .range(['#80C4E4', '#008ACA', '#56CC27']);
+
+    // スタート又は完了の描画
+    const rect = tasks
+      .append('rect')
+      .attr('rx', 3)
+      .attr('ry', 3)
+      .attr('width', t => {
+        let width = 0;
+        for (let date = new Date(t.startTime); date <= t.endTime; date = moment(date).add(1, 'days').toDate()) {
+          width += this.config.dates.days.day.width;
+        }
+        return width;
+      })
+      .attr('height', this.config.tasks.task.height)
+      .attr('fill', d => (d.progressRate === 100 ? colorScale('completed') : colorScale('started')) as string);
+
+    // 進捗の描画
+    tasks
+      .append('rect')
+      .attr('rx', 3)
+      .attr('ry', 3)
+      .attr('width', t => {
+        if (t.progressRate === 100) { return 0 }
+        let width = 0;
+        for (let date = new Date(t.startTime); date <= t.endTime; date = moment(date).add(1, 'days').toDate()) {
+          width += this.config.dates.days.day.width;
+        }
+        return t.progressRate / 100 * width;
+      })
+      .attr('height', this.config.tasks.task.height)
+      .attr('fill', colorScale('inProgress') as string);
+
+    // タスク名
+    tasks
+      .append('text')
+      .text(d => d.name)
+      .attr('x', t => {
+        let width = 0;
+        for (let date = new Date(t.startTime); date <= t.endTime; date = moment(date).add(1, 'days').toDate()) {
+          width += this.config.dates.days.day.width;
+        }
+        return width / 2;
+      })
+      .attr('y', this.config.tasks.task.height / 2)
+      .attr('fill', '#fff')
+      .attr('font-size', 11)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+
+    // task line
+    canvas
+      .append('line')
+      .attr('x1', 0)
+      .attr('x2', this.datesWidth)
+      .attr('y1', this.tasksHeight)
+      .attr('y2', this.tasksHeight)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color)
   }
 
   /**
@@ -346,21 +424,40 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   private getGroupsSelection(
     canvas: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ): d3.Selection<SVGGElement, Group, SVGSVGElement, unknown> {
-
-    // グループトップ位置
-    const getGroupTop = (index: number): number => {
-      return this.groupedTasks.reduce((p, c, i) => {
-        return p += i < index ? this.getGroupHeight(c.tasks.length) : 0;
-      }, 0);
-    };
-
     return canvas.selectAll('.groups')
       .data(this.groupedTasks)
       .enter()
       .append('g')
       .attr('class', 'groups')
-      .attr('transform', (d, i) => `translate(0, ${getGroupTop(i)})`);
+      .attr('transform', d => `translate(0, ${this.getGroupTop(d)})`);
   }
+
+  /**
+   * タスクセレクションの生成
+   */
+  private getTasksSelection(
+    canvas: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+  ): d3.Selection<SVGGElement, Task, SVGGElement, Group> {
+    return this.getGroupsSelection(canvas)
+      .selectAll('.tasks')
+      .data(d => d.tasks)
+      .enter()
+      .append('g')
+      .attr('class', 'task')
+      .attr('transform', d => `translate(${this.getTaskLeft(d.startTime)}, ${this.getTaskTopInGroup(d)})`);
+  }
+
+  /**
+   * グループのトップ位置の取得
+   */
+  private getGroupTop(group: Group): number {
+    let top = 0;
+    for (const g of this.groupedTasks) {
+      if (g === group) { break; }
+      top += this.getGroupHeight(g.tasks.length);
+    }
+    return top;
+  };
 
   /**
    * グループの高さの取得
@@ -372,18 +469,22 @@ export class GanttChart4Component implements OnInit, AfterViewInit {
   };
 
   /**
-   * タスクのトップ位置の取得
-   */
-  private getTaskTop(index: number): number {
-    return this.config.groups.taskPaddingTop +
-      this.config.tasks.task.height * index +
-      this.config.tasks.task.gap * index;
-  };
-
-  /**
    * タスクの左位置の取得
    */
   private getTaskLeft(date: Date): number {
-    return this.datesWidth * (this.dates).findIndex(d => moment(d).isSame(date));
+    return this.config.dates.days.day.width * (this.dates).findIndex(d => moment(d).isSame(date));
   };
+
+  /**
+   * グループ内でのタスクのトップ位置の取得
+   */
+  private getTaskTopInGroup(task: Task) {
+    const group = this.groupedTasks.find(g => g.tasks.some(t => t === task));
+    let top = this.config.groups.taskPaddingTop;
+    for (const t of group.tasks) {
+      if (t === task) { break; }
+      top += this.config.tasks.task.height + this.config.tasks.task.gap;
+    }
+    return top;
+  }
 }
