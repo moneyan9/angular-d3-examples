@@ -1,13 +1,13 @@
-<div class="container">
-  <div [id]="cornerId" class="corner">
+<div class="container" #container>
+  <div class="corner" #corner>
   </div>
-  <div [id]="datesId" class="dates">
+  <div class="dates" #dates>
   </div>
-  <div [id]="groupsId" class="groups">
+  <div class="groups" #groups>
   </div>
-  <div [id]="tasksId" class="tasks">
+  <div class="tasks" #tasks (scroll)="groups.scrollTop = tasks.scrollTop; dates.scrollLeft = tasks.scrollLeft;">
   </div>
-</div>
-<div id="today-button" (click)="scrollToToday()">
-  Today
+  <div id="tag" #tag></div>
+  <div id="today-button" #todayButton (click)="scrollToToday()">
+  </div>
 </div>

@@ -1,7 +1,7 @@
-import { Component, OnInit, AfterViewInit } from '@angular/core';
-import { UUID } from 'angular2-uuid';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import * as d3 from 'd3';
 import * as moment from 'moment'
+import { TasksService } from '../services/tasks.service';
 
 type Group = {
   name: string;
@@ -23,10 +23,14 @@ type Task = {
 })
 export class GanttChart5Component implements OnInit, AfterViewInit {
 
-  cornerId = `chart_${UUID.UUID()}`;
-  datesId = `chart_${UUID.UUID()}`;
-  groupsId = `chart_${UUID.UUID()}`;
-  tasksId = `chart_${UUID.UUID()}`;
+  @ViewChild('corner') cornerElement: ElementRef;
+  @ViewChild('dates') datesElement: ElementRef;
+  @ViewChild('groups') groupsElement: ElementRef;
+  @ViewChild('tasks') tasksElement: ElementRef;
+  @ViewChild('tag') tagElement: ElementRef;
+  @ViewChild('todayButton') todayButtonElement: ElementRef;
+
+  todayElemnt: SVGGElement = null;
 
   private config = {
     stroke: {
@@ -50,150 +54,43 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
     },
     groups: {
       width: 200,
-      paddingTop: 5,
-      paddingBottom: 5,
+      paddingTop: 10,
+      paddingBottom: 10,
     },
     tasks: {
       height: undefined,
       task: {
         height: 15,
-        gap: 10,
+        gap: 15,
       },
     }
   }
 
-  private groupedTasks: Group[] = [
-    {
-      name: 'development',
-      tasks:
-        [
-          {
-            name: 'conceptualize',
-            startTime: new Date('2013-1-28'),
-            endTime: new Date('2013-2-1'),
-            progressRate: 40,
-            details: 'This actually did\'nt take any conceptualization'
-          },
-          {
-            name: 'sketch',
-            startTime: new Date('2013-2-1'),
-            endTime: new Date('2013-2-6'),
-            progressRate: 20,
-            details: 'No sketching either, really'
-          },
-          {
-            name: 'color profiles',
-            startTime: new Date('2013-2-6'),
-            endTime: new Date('2013-2-9'),
-            progressRate: 50,
-          },
-        ]
-    },
-    {
-      name: 'coding',
-      tasks:
-        [
-          {
-            name: 'HTML',
-            startTime: new Date('2013-2-2'),
-            endTime: new Date('2013-2-6'),
-            progressRate: 10,
-            details: 'all three lines of it'
-          },
-          {
-            name: 'write the JS',
-            startTime: new Date('2013-2-6'),
-            endTime: new Date('2013-2-9'),
-            progressRate: 5,
-          },
-        ]
-    },
-    {
-      name: 'promotion',
-      tasks:
-        [
-          {
-            name: 'advertise',
-            startTime: new Date('2013-2-9'),
-            endTime: new Date('2013-2-12'),
-            progressRate: 70,
-            details: 'This counts, right?'
-          },
-          {
-            name: 'spam links',
-            startTime: new Date('2013-2-12'),
-            endTime: new Date('2013-2-14'),
-            progressRate: 90,
-          },
-        ]
-    },
-    {
-      name: 'celebration',
-      tasks:
-        [
-          {
-            name: 'eat',
-            startTime: new Date('2013-2-8'),
-            endTime: new Date('2013-2-13'),
-            details: 'All the things',
-            progressRate: 45,
-          },
-          {
-            name: 'crying',
-            startTime: new Date('2013-2-13'),
-            endTime: new Date('2013-5-16'),
-            progressRate: 95,
-          },
-        ]
-    },
-    {
-      name: 'meeting',
-      tasks:
-        [
-          {
-            name: 'xxx',
-            startTime: new Date('2013-1-28'),
-            endTime: new Date('2013-2-1'),
-            progressRate: 80,
-            details: 'This actually did\'nt take any conceptualization'
-          },
-          {
-            name: 'yyy',
-            startTime: new Date('2013-2-1'),
-            endTime: new Date('2013-2-6'),
-            progressRate: 30,
-            details: 'No sketching either, really'
-          },
-          {
-            name: 'zzz',
-            startTime: new Date('2013-2-6'),
-            endTime: new Date('2013-2-9'),
-            progressRate: 100,
-          },
-        ]
-    },
-  ];
+  groupedTasks: Group[];
 
-  constructor() { }
+  constructor(
+    private srvTasks: TasksService
+  ) { }
 
   ngOnInit(): void {
   }
 
   ngAfterViewInit(): void {
     this.drawGanttChart();
+    this.setTodayButtonVisibility();
+    this.scrollToToday();
   }
 
   /**
    * 今日へスクロール
    */
   scrollToToday() {
-    const element = document.getElementById(this.tasksId);
-    const todayElement = document.getElementById('today');
-    console.log(todayElement)
-    const elemtop = todayElement.getBoundingClientRect().x;
 
-    // -30は微調整分
-    element.scrollLeft += elemtop + -30;
+    // 1日半分ずらす
+    this.tasksElement.nativeElement.scrollLeft =
+      this.todayElemnt.getBoundingClientRect().x +
+      this.tasksElement.nativeElement.scrollLeft - this.tasksElement.nativeElement.getBoundingClientRect().x
+      - this.config.dates.days.width - this.config.dates.days.width / 2;
   }
 
   /**
@@ -205,41 +102,32 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
     this.initializeConfig();
 
     // コーナーの描画
-    const corner = this.createCorner();
-    this.drawCorner(corner);
-
-    // 日付コンテナーの描画
-    const dateContainer = this.createDateContainer();
-    this.drawDateContainer(dateContainer);
+    const cornerContainer = this.createBaseContainer(this.cornerElement.nativeElement, this.config.groups.width,
+      this.config.dates.months.height + this.config.dates.days.height);
+    this.drawCorner(cornerContainer);
 
     // 日付の描画
-    const dates = this.createDates(dateContainer);
-    this.drawDates(dates);
-
-    // グループコンテナーの描画
-    const groupContainer = this.createGroupContainer();
-    this.drawGroupContainer(groupContainer);
+    const dateContainer = this.createBaseContainer(this.datesElement.nativeElement, this.config.dates.width,
+      this.config.dates.months.height + this.config.dates.days.height);
+    this.drawDate(dateContainer);
 
     // グループの描画
-    const groups = this.createGroups(groupContainer);
-    this.drawGroups(groups);
-
-    // タスクコンテナーの描画
-    const taskContainer = this.createTaskContainer();
-
-    // 日付線の描画
-    const dateLines = this.createDates(taskContainer);
-    this.drawDateLines(dateLines);
+    const groupContainer =
+      this.createBaseContainer(this.groupsElement.nativeElement, this.config.groups.width, this.config.tasks.height);
+    this.drawGroup(groupContainer);
 
     // タスクの描画
-    const tasks = this.createTasks(taskContainer);
-    this.drawTasks(tasks);
+    const taskContainer =
+      this.createBaseContainer(this.tasksElement.nativeElement, this.config.dates.width, this.config.tasks.height);
+    this.drawTask(taskContainer);
   }
 
   /**
    * 設定の初期化
    */
   private initializeConfig() {
+    this.groupedTasks = this.srvTasks.get();
+
     const allTasks = this.groupedTasks.reduce((p: Task[], c) => { return [...p, ...c.tasks] }, []);
     const minDate = d3.min(allTasks.map(task => task.startTime));
     const maxDate = d3.max(allTasks.map(task => task.endTime));
@@ -252,13 +140,19 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * コーナーの生成
+   * ベースコンテナーの生成
    */
-  private createCorner(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
-    return d3.select(`#${this.cornerId}`)
+  private createBaseContainer(
+    HTMLElement: HTMLElement,
+    width: number,
+    height: number,
+    attrs?: { name: string, value: string | number | boolean }[]
+  ): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
+
+    return d3.select(HTMLElement)
       .append('svg')
-      .attr('width', this.config.groups.width)
-      .attr('height', this.config.dates.months.height + this.config.dates.days.height);
+      .attr('width', width)
+      .attr('height', height);
   }
 
   /**
@@ -285,21 +179,12 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * 日付コンテナーの生成
-   */
-  private createDateContainer(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
-    return d3.select(`#${this.datesId}`)
-      .append('svg')
-      .attr('width', this.config.dates.width)
-      .attr('height', this.config.dates.months.height + this.config.dates.days.height);
-  }
-
-  /**
    * 日付コンテナーの描画
    */
   private drawDateContainer(
     dates: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
+    // 日付コンテナーの下線描画
     dates.append('line')
       .attr('x1', 0)
       .attr('x2', this.config.dates.width)
@@ -328,10 +213,24 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
   /**
    * 日付の描画
    */
+  private drawDate(
+    dateContainer: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+  ) {
+
+    // 日付コンテナーの描画
+    this.drawDateContainer(dateContainer);
+    const dates = this.createDates(dateContainer);
+    // 日付の描画
+    this.drawDates(dates);
+  }
+
+  /**
+   * 日付の描画
+   */
   private drawDates(
     dates: d3.Selection<SVGGElement, Date, SVGSVGElement, unknown>
   ) {
-    const today = moment(new Date('2013-2-12'));
+    const today = moment(new Date('2013-4-1'));
     const todayDate = dates.filter(d => moment(d).diff(today) === 0);
     const lastDayOfTheMonths = dates.filter(d => moment(d).date() === moment(d).daysInMonth());
 
@@ -343,7 +242,6 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
       .attr('y2', this.config.dates.months.height + this.config.dates.days.height)
       .attr('stroke-width', this.config.stroke.width)
       .attr('stroke', this.config.stroke.color)
-      .attr('id', 'today');
 
     // 年月
     dates.filter((d, i) => i === 0 || moment(d).date() === 1)
@@ -386,14 +284,16 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * グループコンテナーの生成
+   * グループの描画
    */
-  private createGroupContainer(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
-
-    return d3.select(`#${this.groupsId}`)
-      .append('svg')
-      .attr('width', this.config.groups.width)
-      .attr('height', this.config.tasks.height);
+  private drawGroup(
+    groupContainer: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
+  ) {
+    // グループコンテナーの描画
+    this.drawGroupContainer(groupContainer);
+    const groups = this.createGroups(groupContainer);
+    // グループの描画
+    this.drawGroups(groups);
   }
 
   /**
@@ -454,35 +354,16 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
   }
 
   /**
-   * タスクコンテナーの生成
+   * グループタスクコンテナーの生成
    */
-  private createTaskContainer(): d3.Selection<SVGSVGElement, unknown, HTMLElement, any> {
-    return d3.select(`#${this.tasksId}`)
-      .append('svg')
-      .attr('width', this.config.dates.width)
-      .attr('height', this.config.tasks.height);
-  }
-
-  /**
-   * タスクの生成
-   */
-  private createTasks(taskContainer: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>)
-    : d3.Selection<SVGGElement, Task, SVGGElement, Group> {
+  private createTaskGroupContainer(taskContainer: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>)
+    : d3.Selection<SVGGElement, Group, SVGSVGElement, unknown> {
 
     const getGroupTop = (index: number): number => {
       return this.groupedTasks.reduce((p, c, i) => {
         return p += i < index ? this.getGroupHeight(c.tasks.length) : 0;
       }, 0);
     };
-
-    // 下線
-    taskContainer.append('line')
-      .attr('x1', 0)
-      .attr('x2', this.config.dates.width)
-      .attr('y1', taskContainer.node().clientHeight)
-      .attr('y2', taskContainer.node().clientHeight)
-      .attr('stroke-width', this.config.stroke.width)
-      .attr('stroke', this.config.stroke.color);
 
     return taskContainer
       .selectAll('.groups')
@@ -491,6 +372,55 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
       .append('g')
       .attr('class', 'groups')
       .attr('transform', (d, i) => `translate(0, ${getGroupTop(i)})`)
+  }
+
+  /**
+   * タスクの描画
+   */
+  private drawTask(taskContainer: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>) {
+
+    // タスクコンテナーの描画
+    this.drawTaskContainerLine(taskContainer);
+
+    // 日付線の描画
+    const dateLines = this.createDates(taskContainer);
+    this.drawDateLines(dateLines);
+
+    // グループコンテナーの描画
+    const taskGroupContainer = this.createTaskGroupContainer(taskContainer);
+    // グループ線の描画
+    this.drawTaskGroupLines(taskGroupContainer);
+
+    // タスクの描画
+    const tasks = this.createTasks(taskGroupContainer);
+    this.drawTasks(tasks);
+
+    // ツールチップの描画
+    this.drawToolChip(tasks);
+  }
+
+  /**
+   * タスクコンテナーのライン描画
+   */
+  private drawTaskContainerLine(taskContainer: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>) {
+
+    taskContainer
+      .append('line')
+      .attr('x1', 0)
+      .attr('x2', this.config.dates.days.width * this.config.dates.width)
+      .attr('y1', this.config.tasks.height)
+      .attr('y2', this.config.tasks.height)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color)
+  }
+
+  /**
+   * タスクの生成
+   */
+  private createTasks(taskContainer: d3.Selection<SVGGElement, Group, SVGSVGElement, unknown>)
+    : d3.Selection<SVGGElement, Task, SVGGElement, Group> {
+
+    return taskContainer
       .selectAll('.tasks')
       .data(d => d.tasks)
       .enter()
@@ -499,6 +429,22 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
       .attr('transform', d => `translate(${this.getTaskLeft(d.startTime)}, ${this.getTaskTopInGroup(d)})`);
   }
 
+  /**
+   * タスクグループラインの描画
+   */
+  private drawTaskGroupLines(
+    taskGroupContainer: d3.Selection<SVGGElement, Group, SVGSVGElement, unknown>
+  ) {
+
+    taskGroupContainer
+      .append('line')
+      .attr('x1', 0)
+      .attr('x2', this.config.dates.width)
+      .attr('y1', 0)
+      .attr('y2', 0)
+      .attr('stroke-width', this.config.stroke.width)
+      .attr('stroke', this.config.stroke.color)
+  }
 
   /**
    * 日付線の描画
@@ -506,7 +452,7 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
   private drawDateLines(
     dates: d3.Selection<SVGGElement, Date, SVGSVGElement, unknown>
   ) {
-    const today = moment(new Date('2013-2-12'));
+    const today = moment(new Date('2013-4-1'));
     const todayDate = dates.filter(d => moment(d).diff(today) === 0);
     const holiday = dates.filter(d => moment(d).isoWeekday() === 6 || moment(d).isoWeekday() === 7);
 
@@ -528,7 +474,7 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
       .attr('fill', '#f5f5f5');
 
     // today line
-    todayDate
+    this.todayElemnt = todayDate
       .append('line')
       .attr('x1', this.config.dates.days.width / 2)
       .attr('x2', this.config.dates.days.width / 2)
@@ -536,7 +482,7 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
       .attr('y2', dates.node().parentElement.clientHeight)
       .attr('stroke-width', this.config.stroke.width)
       .attr('stroke', '#F9410B')
-      .attr('id', 'today');
+      .node();
   }
 
   /**
@@ -552,7 +498,7 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
       .range(['#80C4E4', '#008ACA', '#56CC27']);
 
     // スタート又は完了の描画
-    const rect = tasks
+    tasks
       .append('rect')
       .attr('rx', 3)
       .attr('ry', 3)
@@ -627,5 +573,90 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
    */
   private getTaskLeft(date: Date): number {
     return this.config.dates.days.width * (this.config.dates.days.data as Date[]).findIndex(d => moment(d).isSame(date));
-  };
+  }
+
+  /**
+   * ツールチップの描画
+   */
+  private drawToolChip(
+    tasks: d3.Selection<SVGGElement, Task, SVGGElement, Group>
+  ) {
+
+    // ツールチップ
+    tasks.on('mousemove', () => this.showToolTip())
+      .on('mouseout', () => this.hideToolTip());
+  }
+
+  /**
+   * ツールチップの表示
+   */
+  private showToolTip() {
+    const targetElement = d3.event.currentTarget;
+    const selectedData = d3.select<any, Task>(targetElement).data()[0];
+
+    let tag = 'Task: ' + selectedData.name +
+      '<br/>' + 'Starts: ' + moment(selectedData.startTime).format('yyyy/MM/DD') +
+      '<br/>' + 'Ends: ' + moment(selectedData.endTime).format('yyyy/MM/DD');
+    if (selectedData.details) {
+      tag += '<br/>' + 'Details: ' + selectedData.details;
+    }
+    this.tagElement.nativeElement.style.top = '0px';
+    this.tagElement.nativeElement.style.left = '0px'
+    this.tagElement.nativeElement.innerHTML = tag;
+    this.tagElement.nativeElement.style.display = 'block';
+    const outputWidth = this.tagElement.nativeElement.getBoundingClientRect().width;
+    this.tagElement.nativeElement.style.top = targetElement.getBoundingClientRect().y +
+      window.pageYOffset + this.config.tasks.task.height + 10 + 'px';
+    this.tagElement.nativeElement.style.left = targetElement.getBoundingClientRect().x +
+      d3.mouse(d3.event.currentTarget)[0] + window.pageXOffset - outputWidth / 2 + 'px';
+  }
+
+  /**
+   * ツールチップの非表示
+   */
+  private hideToolTip() {
+    this.tagElement.nativeElement.style.display = 'none';
+  }
+
+
+  /**
+   * Todayボタンの表示非表示設定
+   */
+  private setTodayButtonVisibility() {
+
+    this.tasksElement.nativeElement.onscroll = () => {
+      const todayLineXPoint = this.todayElemnt.getBoundingClientRect().x;
+      const taskContainerRect = this.tasksElement.nativeElement.getBoundingClientRect();
+      const showTodayButtonRange = { x1: taskContainerRect.x, x2: taskContainerRect.x + taskContainerRect.width };
+
+      // TodayLineが表示画面内の場合は非表示
+      if (showTodayButtonRange.x1 < todayLineXPoint && showTodayButtonRange.x2 > todayLineXPoint) {
+        this.todayButtonElement.nativeElement.style.display = 'none';
+        return;
+      }
+
+      // TodayLineが表示画面の左側に隠れている場合
+      if (showTodayButtonRange.x1 > todayLineXPoint) {
+        const cornerRect = this.cornerElement.nativeElement.getBoundingClientRect();
+        this.todayButtonElement.nativeElement.innerHTML = '<div>Today ⇐</div>';
+        this.todayButtonElement.nativeElement.style.display = 'block';
+        this.todayButtonElement.nativeElement.style.top = cornerRect.y + 5 + window.pageYOffset + 'px';
+        this.todayButtonElement.nativeElement.style.left = cornerRect.x + 5 + window.pageXOffset + 'px';
+        this.todayButtonElement.nativeElement.style.whiteSpace = 'nowrap';
+        return;
+      }
+
+      // TodayLineが表示画面の右側に隠れている場合
+      if (showTodayButtonRange.x2 < todayLineXPoint) {
+        const datesRect = this.datesElement.nativeElement.getBoundingClientRect();
+        this.todayButtonElement.nativeElement.innerHTML = '<div>Today ⇒</div>';
+        this.todayButtonElement.nativeElement.style.display = 'block';
+        this.todayButtonElement.nativeElement.style.top = datesRect.y + 5 + window.pageYOffset + 'px';
+        this.todayButtonElement.nativeElement.style.left = datesRect.x + datesRect.width -
+          this.todayButtonElement.nativeElement.getBoundingClientRect().width - 5 + window.pageXOffset + 'px';
+        this.todayButtonElement.nativeElement.style.whiteSpace = 'nowrap';
+        return;
+      }
+    }
+  }
 }
