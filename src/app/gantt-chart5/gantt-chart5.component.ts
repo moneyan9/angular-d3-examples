@@ -161,6 +161,7 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
   private drawCorner(
     corner: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>
   ) {
+
     corner.append('line')
       .attr('x1', 0)
       .attr('x2', this.config.groups.width)
@@ -515,8 +516,8 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
     // 進捗の描画
     tasks
       .append('rect')
-      .attr('rx', 3)
-      .attr('ry', 3)
+      .attr('rx', d => d.progressRate === 100 ? 3 : 0)
+      .attr('ry', d => d.progressRate === 100 ? 3 : 0)
       .attr('width', t => {
         if (t.progressRate === 100) { return 0 }
         let width = 0;
@@ -635,20 +636,19 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
         return;
       }
 
+      const datesRect = this.datesElement.nativeElement.getBoundingClientRect();
       // TodayLineが表示画面の左側に隠れている場合
       if (showTodayButtonRange.x1 > todayLineXPoint) {
-        const cornerRect = this.cornerElement.nativeElement.getBoundingClientRect();
         this.todayButtonElement.nativeElement.innerHTML = '<div>Today ⇐</div>';
         this.todayButtonElement.nativeElement.style.display = 'block';
-        this.todayButtonElement.nativeElement.style.top = cornerRect.y + 5 + window.pageYOffset + 'px';
-        this.todayButtonElement.nativeElement.style.left = cornerRect.x + 5 + window.pageXOffset + 'px';
+        this.todayButtonElement.nativeElement.style.top = datesRect.y + 5 + window.pageYOffset + 'px';
+        this.todayButtonElement.nativeElement.style.left = datesRect.x + 5 + window.pageXOffset + 'px';
         this.todayButtonElement.nativeElement.style.whiteSpace = 'nowrap';
         return;
       }
 
       // TodayLineが表示画面の右側に隠れている場合
       if (showTodayButtonRange.x2 < todayLineXPoint) {
-        const datesRect = this.datesElement.nativeElement.getBoundingClientRect();
         this.todayButtonElement.nativeElement.innerHTML = '<div>Today ⇒</div>';
         this.todayButtonElement.nativeElement.style.display = 'block';
         this.todayButtonElement.nativeElement.style.top = datesRect.y + 5 + window.pageYOffset + 'px';
