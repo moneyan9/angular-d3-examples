@@ -1,11 +1,16 @@
 <div class="container">
-  <div [id]="cornerId" class="corner">
+  <div #corner class="corner">
   </div>
-  <div [id]="datesId" class="dates" #dates>
+  <div #dates class="dates" #dates>
+    <div #leftTodayButton class="today-button">
+      today
+    </div>
+    <div #rightTodayButton class="today-button">
+      today
+    </div>
   </div>
-  <div [id]="groupsId" class="groups" #groups>
+  <div #groups class="groups" #groups>
   </div>
-  <div [id]="tasksId" class="tasks" #tasks
-    (scroll)="groups.scrollTop = tasks.scrollTop; dates.scrollLeft = tasks.scrollLeft;">
+  <div #tasks class="tasks" #tasks (scroll)="syncVerticalScroll(tasks, groups); syncHorizontalScroll(tasks, dates);">
   </div>
 </div>
