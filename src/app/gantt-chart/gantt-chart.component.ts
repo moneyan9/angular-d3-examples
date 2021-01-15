@@ -381,19 +381,19 @@ export class GanttChartComponent implements OnInit, AfterViewInit {
       .attr('fill', '#fff');
 
     // ツールチップ
-    rectText.on('mouseover', () => {
-      const targetElement = d3.event.currentTarget;
+    rectText.on('mouseover', (event) => {
+      const targetElement = event.currentTarget;
       const left = targetElement.x.animVal.getItem(targetElement) + 'px';
       const top = targetElement.y.animVal.getItem(targetElement) + 30 + 'px';
-      this.showToolTip(top, left);
+      this.showToolTip(top, left, targetElement);
     }).on('mouseout', () => {
       this.hideToolTip();
     });
-    innerRects.on('mouseover', () => {
-      const targetElement = d3.event.currentTarget;
+    innerRects.on('mouseover', (event) => {
+      const targetElement = event.currentTarget;
       const top = targetElement.y.animVal.value + 30 + 'px';
       const left = (targetElement.x.animVal.value + targetElement.width.animVal.value / 2) + 'px';
-      this.showToolTip(top, left);
+      this.showToolTip(top, left, targetElement);
     }).on('mouseout', () => {
       this.hideToolTip();
     });
@@ -404,9 +404,9 @@ export class GanttChartComponent implements OnInit, AfterViewInit {
    */
   private showToolTip(
     top: string,
-    left: string) {
+    left: string,
+    targetElement: any) {
 
-    const targetElement = d3.event.currentTarget;
     const selectedData = d3.select(targetElement).data()[0] as Task;
 
     let tag = 'Task: ' + selectedData.task +

@@ -535,12 +535,12 @@ export class GanttChart2Component implements OnInit, AfterViewInit {
   ) {
 
     // ツールチップ
-    tasks.on('mouseover', () => {
-      const targetElement = d3.event.currentTarget;
+    tasks.on('mouseover', (event) => {
+      const targetElement = event.currentTarget;
       const left = targetElement.getBoundingClientRect().x;
       const top = targetElement.getBoundingClientRect().y;
       const width = targetElement.getBoundingClientRect().width;
-      this.showToolTip(top, left, width);
+      this.showToolTip(top, left, width, targetElement);
     }).on('mouseout', () => {
       this.hideToolTip();
     });
@@ -582,9 +582,9 @@ export class GanttChart2Component implements OnInit, AfterViewInit {
   private showToolTip(
     top: number,
     left: number,
-    width: number) {
+    width: number,
+    targetElement: any) {
 
-    const targetElement = d3.event.currentTarget;
     const selectedData = d3.select<any, Task>(targetElement).data()[0];
 
     let tag = 'Task: ' + selectedData.name +

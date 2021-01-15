@@ -584,15 +584,14 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
   ) {
 
     // ツールチップ
-    tasks.on('mousemove', () => this.showToolTip())
+    tasks.on('mousemove', (event) => this.showToolTip(event.currentTarget))
       .on('mouseout', () => this.hideToolTip());
   }
 
   /**
    * ツールチップの表示
    */
-  private showToolTip() {
-    const targetElement = d3.event.currentTarget;
+  private showToolTip(targetElement: any) {
     const selectedData = d3.select<any, Task>(targetElement).data()[0];
 
     let tag = 'Task: ' + selectedData.name +
@@ -608,8 +607,12 @@ export class GanttChart5Component implements OnInit, AfterViewInit {
     const outputWidth = this.tagElement.nativeElement.getBoundingClientRect().width;
     this.tagElement.nativeElement.style.top = targetElement.getBoundingClientRect().y +
       window.pageYOffset + this.config.tasks.task.height + 10 + 'px';
+      this.tagElement.nativeElement.style.left = targetElement.getBoundingClientRect().x +
+      0 + window.pageXOffset - outputWidth / 2 + 'px';
+    /*
     this.tagElement.nativeElement.style.left = targetElement.getBoundingClientRect().x +
-      d3.mouse(d3.event.currentTarget)[0] + window.pageXOffset - outputWidth / 2 + 'px';
+      d3.mouse(targetElement)[0] + window.pageXOffset - outputWidth / 2 + 'px';
+    */
   }
 
   /**
